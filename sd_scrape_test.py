@@ -4,6 +4,9 @@ from bs4 import BeautifulSoup
 
 def scrape_top_level():
 
+    # visits the main page (where SDPD data starts)
+    # pulls the links of other top-level pages
+
     top_level_urls = ['https://www.sandiego.gov/police/data-transparency/mandated-disclosures/sb16-sb1421-ab748']
     url = 'https://www.sandiego.gov/police/data-transparency/mandated-disclosures/sb16-sb1421-ab748'
     # page = requests.get(url) 
@@ -25,13 +28,15 @@ def scrape_top_level():
 
 def download_case_files(base_url, second_level_urls):
 
+    # Goes to the individual case links for SDPD
+    # Downloads the files on those individual pages
+
     all_case_content_links = [] 
     all_case_content_text = []
 
     # /Users/dilcia_mercedes/Big_Local_News/2022_code/sandiego_scrape/
 
     for url in second_level_urls.keys():
-        # print(url[0:6])
         page = requests.get(url) 
 
         time.sleep(.5)
@@ -51,14 +56,12 @@ def download_case_files(base_url, second_level_urls):
     test_links = all_case_content_links[0:10]
     test_text = all_case_content_text[0:10]
 
-    # # count = 1
     # for record in test_links: # swap `test_links` out for `all_case_content_links` full scrape
     # also swap out `test_text`
     for (record, record_text) in zip(test_links, test_text):
         
-        # end = record[-4:]
         print(record)
-        file_name = f'pages/{record_text[1:]}' 
+        file_name = f'files/{record_text[1:]}' 
         
         r = requests.get(record, stream = True)
 
@@ -69,20 +72,16 @@ def download_case_files(base_url, second_level_urls):
                     f.write(chunk)
     
         print ("%s downloaded!\n"%file_name)
-        # count += 1
         time.sleep(.5)
         print('_______________________')
-
-    
-        # print(f'{record} has issue, check link')
-
-    # print(all_case_content_links)
 
 
     return
 
 def scrape_each_top_page(top_level_urls, base_url):
 
+    # Uses the links of the 6 top-level pages of SDPD and scrapes all links on each page
+    # The links on those top-level pages lead to the pages of individual SDPD cases
     second_level_urls = {}
 
     for top_url in top_level_urls:
