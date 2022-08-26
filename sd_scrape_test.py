@@ -31,6 +31,7 @@ def download_case_files(base_url, second_level_urls):
     # Goes to the individual case links for SDPD
     # Downloads the files on those individual pages
 
+
     all_case_content_links = [] 
     all_case_content_text = []
 
@@ -61,15 +62,19 @@ def download_case_files(base_url, second_level_urls):
     for (record, record_text) in zip(test_links, test_text):
         
         print(record)
-        file_name = f'files/{record_text[1:]}' 
+        # file_name = f'files/{record_text[1:]}' 
+        file_name = f'files/{record_text}' 
+
         
         r = requests.get(record, stream = True)
 
         #download started
         with open(file_name, 'wb') as f:
-            for chunk in r.iter_content(chunk_size = 1024*1024):
+            # chunk_size = 1024*1024
+            for chunk in r.iter_content(chunk_size = 1024):
                 if chunk:
                     f.write(chunk)
+                    f.flush()
     
         print ("%s downloaded!\n"%file_name)
         time.sleep(.5)
@@ -103,9 +108,31 @@ def scrape_each_top_page(top_level_urls, base_url):
                     full_link = base_url + elem_a['href']
                     second_level_urls[full_link] = text
 
-    download_case_files(base_url, second_level_urls)
+    
+    print(len(second_level_urls)) # comment out lines 109-120 when download is verified
 
+    # print(second_level_urls)
+    i = 50
+    while i > 1:
+        second_level_urls.popitem()
+        i-=1
+
+    print('----------------------------------------')
+    print(len(second_level_urls))
+
+    print(second_level_urls)
+
+
+    # print('***************')
+    # first_item = next(iter(second_level_urls.items())) # comment out when no longer testing
+    # print(first_item)
+
+    # download_case_files(base_url, first_item)
+
+    download_case_files(base_url, second_level_urls) # comment back in
     return second_level_urls
+
+
 
     
 
