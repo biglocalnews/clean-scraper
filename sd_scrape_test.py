@@ -62,6 +62,7 @@ def download_case_files(base_url, second_level_urls):
     for (record, record_text) in zip(test_links, test_text):
         
         print(record)
+        record_text = "".join(record_text.split())
         # file_name = f'files/{record_text[1:]}' 
         file_name = f'files/{record_text}' 
 
@@ -121,13 +122,6 @@ def scrape_each_top_page(top_level_urls, base_url):
     print(len(second_level_urls))
 
     print(second_level_urls)
-
-
-    # print('***************')
-    # first_item = next(iter(second_level_urls.items())) # comment out when no longer testing
-    # print(first_item)
-
-    # download_case_files(base_url, first_item)
 
     download_case_files(base_url, second_level_urls) # comment back in
     return second_level_urls
