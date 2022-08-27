@@ -1,5 +1,7 @@
 import requests 
+import os
 import time
+from pathlib import Path
 from bs4 import BeautifulSoup
 
 def scrape_top_level():
@@ -30,15 +32,23 @@ def download_case_files(base_url, second_level_urls):
 
     # Goes to the individual case links for SDPD
     # Downloads the files on those individual pages
-
+    error_links = []
 
     all_case_content_links = [] 
     all_case_content_text = []
+    file_path_names = []
 
-    # /Users/dilcia_mercedes/Big_Local_News/2022_code/sandiego_scrape/
+    folder = None
 
     for url in second_level_urls.keys():
         page = requests.get(url) 
+
+        folder = second_level_urls[url]
+        year = folder[6:10]
+        print(str(folder[6:10]))
+        
+        if not os.path.exists(f'files/{year}/{folder}'):
+            os.mkdir(f'files/{year}/{folder}')
 
         time.sleep(.5)
         soup = BeautifulSoup(page.text, 'html.parser')
@@ -47,42 +57,42 @@ def download_case_files(base_url, second_level_urls):
         for item in content:
             text = item.text
             paragraph = item.find("p")
-            print(paragraph.a['href'])
-            all_case_content_links.append(paragraph.a['href'])
+            link = paragraph.a['href']
+            print(link)
+            all_case_content_links.append(link)
             all_case_content_text.append(text)
-            print('_______________________')
+            print('')
 
-    
+            record_text = "".join(text.split())
+            file_name = f'files/{year}/{folder}/{record_text}' 
+            path = Path(file_name)
+            file_path_names.append(file_name)
 
-    test_links = all_case_content_links[0:10]
-    test_text = all_case_content_text[0:10]
+            if path.is_file():
+                print(f'The file {file_name} exists')
+            else: 
+                try:
+                    r = requests.get(link, stream = True)
 
-    # for record in test_links: # swap `test_links` out for `all_case_content_links` full scrape
-    # also swap out `test_text`
-    for (record, record_text) in zip(test_links, test_text):
-        
-        print(record)
-        record_text = "".join(record_text.split())
-        # file_name = f'files/{record_text[1:]}' 
-        file_name = f'files/{record_text}' 
+                    #download started
+                    with open(file_name, 'wb') as f:
+                        for chunk in r.iter_content(chunk_size = 1024):
+                            if chunk:
+                                f.write(chunk)
+                                f.flush()
+                
+                    print ("%s downloaded!\n"%file_name)
+                    time.sleep(.5)
+                    print('________________________________________________')
+                    error_links.append('NONE')
+                except:
+                    print(f'There was an issue downloading this file: {link}')
+                    error_links.append(link)
 
-        
-        r = requests.get(record, stream = True)
+    info_links = [all_case_content_links, all_case_content_text, error_links, file_path_names]
 
-        #download started
-        with open(file_name, 'wb') as f:
-            # chunk_size = 1024*1024
-            for chunk in r.iter_content(chunk_size = 1024):
-                if chunk:
-                    f.write(chunk)
-                    f.flush()
-    
-        print ("%s downloaded!\n"%file_name)
-        time.sleep(.5)
-        print('_______________________')
-
-
-    return
+ 
+    return info_links
 
 def scrape_each_top_page(top_level_urls, base_url):
 
@@ -109,12 +119,23 @@ def scrape_each_top_page(top_level_urls, base_url):
                     full_link = base_url + elem_a['href']
                     second_level_urls[full_link] = text
 
+        view_content = soup.find_all("div", class_="view-content")
+        headers = view_content[1].find_all("h2")
+
+        for header in headers:
+
+            header_folder = header.text
+            header_folder = "".join(header_folder.split())
+
+            if not os.path.exists(f'files/{header_folder}'):
+                os.mkdir(f'files/{header_folder}')
+
+
     
     print(len(second_level_urls)) # comment out lines 109-120 when download is verified
 
-    # print(second_level_urls)
     i = 50
-    while i > 1:
+    while i > 2:
         second_level_urls.popitem()
         i-=1
 
@@ -123,8 +144,15 @@ def scrape_each_top_page(top_level_urls, base_url):
 
     print(second_level_urls)
 
-    download_case_files(base_url, second_level_urls) # comment back in
-    return second_level_urls
+    info_links = download_case_files(base_url, second_level_urls) # comment back in
+    return 
+
+def output_info(info_links):
+
+    # takes the info from links scraped, error links and writes it to a file
+
+
+    return
 
 
 
