@@ -45,7 +45,6 @@ def download_case_files(base_url, second_level_urls):
 
         folder = second_level_urls[url]
         year = folder[6:10]
-        print(str(folder[6:10]))
         
         if not os.path.exists(f'files/{year}/{folder}'):
             os.mkdir(f'files/{year}/{folder}')
