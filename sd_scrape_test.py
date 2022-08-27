@@ -1,6 +1,7 @@
 import requests 
 import os
 import time
+import csv
 from pathlib import Path
 from bs4 import BeautifulSoup
 
@@ -34,9 +35,13 @@ def download_case_files(base_url, second_level_urls):
     # Downloads the files on those individual pages
     error_links = []
 
+    # all we need for the info is pages, folders, all_case_content_links, error_links
+
     all_case_content_links = [] 
     all_case_content_text = []
     file_path_names = []
+    folders = []
+    years = []
 
     folder = None
 
@@ -54,12 +59,16 @@ def download_case_files(base_url, second_level_urls):
         content = soup.find_all("div", class_="odd") # don't forget to add even...
 
         for item in content:
+
             text = item.text
             paragraph = item.find("p")
+    
             link = paragraph.a['href']
             print(link)
             all_case_content_links.append(link)
             all_case_content_text.append(text)
+            folders.append(folder)
+            years.append(year)
             print('')
 
             record_text = "".join(text.split())
@@ -69,6 +78,7 @@ def download_case_files(base_url, second_level_urls):
 
             if path.is_file():
                 print(f'The file {file_name} exists')
+                error_links.append('Existing file')
             else: 
                 try:
                     r = requests.get(link, stream = True)
@@ -83,15 +93,16 @@ def download_case_files(base_url, second_level_urls):
                     print ("%s downloaded!\n"%file_name)
                     time.sleep(.5)
                     print('________________________________________________')
-                    error_links.append('NONE')
+                    error_links.append('No error: new file downloaded')
+
                 except:
                     print(f'There was an issue downloading this file: {link}')
                     error_links.append(link)
 
-    info_links = [all_case_content_links, all_case_content_text, error_links, file_path_names]
 
+    output_info(years, folders, all_case_content_links, error_links)
  
-    return info_links
+    return
 
 def scrape_each_top_page(top_level_urls, base_url):
 
@@ -134,7 +145,7 @@ def scrape_each_top_page(top_level_urls, base_url):
     print(len(second_level_urls)) # comment out lines 109-120 when download is verified
 
     i = 50
-    while i > 2:
+    while i > 4:
         second_level_urls.popitem()
         i-=1
 
@@ -146,16 +157,23 @@ def scrape_each_top_page(top_level_urls, base_url):
     info_links = download_case_files(base_url, second_level_urls) # comment back in
     return 
 
-def output_info(info_links):
+def output_info(years, folders, all_case_content_links, error_links):
 
-    # takes the info from links scraped, error links and writes it to a file
-
-
-    return
-
+    output_data = [['YEAR','FOLDER','LINK','ERROR']]
+    for year, folder, link, error in zip(years, folders, all_case_content_links, error_links):
+        output_data.append([year, folder, link, error])
 
 
+    # print(data_2)
+    with open("files/scrape_output.csv", "w") as f:
+        wr = csv.writer(f)
+        wr.writerows(output_data)
     
+    print('Scrape output sent to csv file')
+
 
 
 scrape_top_level()
+
+#https://www.sandiego.gov/police/data-transparency/mandated-disclosures/case?id=01-10-2022 3100 Imperial Avenue&cat=AB 748
+#https://www.sandiego.gov/police/data-transparency/mandated-disclosures/case?id=02-11-2022 4900 University Avenue&cat=AB 748
