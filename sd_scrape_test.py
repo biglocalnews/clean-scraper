@@ -56,48 +56,54 @@ def download_case_files(base_url, second_level_urls):
 
         time.sleep(.5)
         soup = BeautifulSoup(page.text, 'html.parser')
-        content = soup.find_all("div", class_="odd") # don't forget to add even...
-
+        content = soup.find_all("div", class_="field-item even")
+        
         for item in content:
+            if item.find("div", class_="view-content") == None:
+                pass
+            else:
+                view_content = item.find("div", class_="view-content")
+                print('___')
+                paragraph = view_content.find_all("p")
+                for paragraph_item in paragraph:
+                    text = paragraph_item.text
+                    print(text)
+                    link = paragraph_item.a['href']
+                    print(link)
+      
+                    all_case_content_links.append(link)
+                    all_case_content_text.append(text)
+                    folders.append(folder)
+                    years.append(year)
+                    print('')
 
-            text = item.text
-            paragraph = item.find("p")
-    
-            link = paragraph.a['href']
-            print(link)
-            all_case_content_links.append(link)
-            all_case_content_text.append(text)
-            folders.append(folder)
-            years.append(year)
-            print('')
+                    record_text = "".join(text.split())
+                    file_name = f'files/{year}/{folder}/{record_text}' 
+                    path = Path(file_name)
+                    file_path_names.append(file_name)
 
-            record_text = "".join(text.split())
-            file_name = f'files/{year}/{folder}/{record_text}' 
-            path = Path(file_name)
-            file_path_names.append(file_name)
+                    if path.is_file():
+                        print(f'The file {file_name} exists')
+                        error_links.append('Existing file')
+                    else: 
+                        try:
+                            r = requests.get(link, stream = True)
 
-            if path.is_file():
-                print(f'The file {file_name} exists')
-                error_links.append('Existing file')
-            else: 
-                try:
-                    r = requests.get(link, stream = True)
+                            #download started
+                            with open(file_name, 'wb') as f:
+                                for chunk in r.iter_content(chunk_size = 1024):
+                                    if chunk:
+                                        f.write(chunk)
+                                        f.flush()
+                        
+                            print ("%s downloaded!\n"%file_name)
+                            time.sleep(.5)
+                            print('________________________________________________')
+                            error_links.append('No error: new file downloaded')
 
-                    #download started
-                    with open(file_name, 'wb') as f:
-                        for chunk in r.iter_content(chunk_size = 1024):
-                            if chunk:
-                                f.write(chunk)
-                                f.flush()
-                
-                    print ("%s downloaded!\n"%file_name)
-                    time.sleep(.5)
-                    print('________________________________________________')
-                    error_links.append('No error: new file downloaded')
-
-                except:
-                    print(f'There was an issue downloading this file: {link}')
-                    error_links.append(link)
+                        except:
+                            print(f'There was an issue downloading this file: {link}')
+                            error_links.append(link)
 
 
     output_info(years, folders, all_case_content_links, error_links)
@@ -142,7 +148,7 @@ def scrape_each_top_page(top_level_urls, base_url):
 
 
     
-    print(len(second_level_urls)) # comment out lines 109-120 when download is verified
+    # print(len(second_level_urls)) # comment out lines 109-120 when download is verified
 
     i = 50
     while i > 4:
@@ -150,9 +156,6 @@ def scrape_each_top_page(top_level_urls, base_url):
         i-=1
 
     print('----------------------------------------')
-    print(len(second_level_urls))
-
-    print(second_level_urls)
 
     info_links = download_case_files(base_url, second_level_urls) # comment back in
     return 
@@ -164,7 +167,6 @@ def output_info(years, folders, all_case_content_links, error_links):
         output_data.append([year, folder, link, error])
 
 
-    # print(data_2)
     with open("files/scrape_output.csv", "w") as f:
         wr = csv.writer(f)
         wr.writerows(output_data)
@@ -174,6 +176,3 @@ def output_info(years, folders, all_case_content_links, error_links):
 
 
 scrape_top_level()
-
-#https://www.sandiego.gov/police/data-transparency/mandated-disclosures/case?id=01-10-2022 3100 Imperial Avenue&cat=AB 748
-#https://www.sandiego.gov/police/data-transparency/mandated-disclosures/case?id=02-11-2022 4900 University Avenue&cat=AB 748
