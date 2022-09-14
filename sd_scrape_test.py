@@ -67,9 +67,9 @@ def download_case_files(base_url, second_level_urls):
                 paragraph = view_content.find_all("p")
                 for paragraph_item in paragraph:
                     text = paragraph_item.text
-                    print(text)
                     link = paragraph_item.a['href']
-                    print(link)
+                    maybe_ab748 = link[32:38]
+                    
       
                     all_case_content_links.append(link)
                     all_case_content_text.append(text)
@@ -85,6 +85,9 @@ def download_case_files(base_url, second_level_urls):
                     if path.is_file():
                         print(f'The file {file_name} exists')
                         error_links.append('Existing file')
+                    elif 'AB 748' == maybe_ab748:
+                        print("THIS IS AN AB748 LINK!!")
+                        error_links.append('AB748 Link - no file downloaded')
                     else: 
                         try:
                             r = requests.get(link, stream = True)
