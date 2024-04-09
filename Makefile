@@ -71,7 +71,7 @@ endef
 # Commands
 #
 
-run: ## run a scraper. example: `make run scraper=IA`
+run: ## run a scraper. example: `make run agency=ca_san_diego_pd`
 	$(call banner,        🔪 Scraping data 🔪)
 	$(PIPENV) python -m clean.cli $(scraper) -l DEBUG
 
