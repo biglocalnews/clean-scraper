@@ -51,17 +51,17 @@ def local_version(version):
     return ""
 
 setup(
-    name="clean-scrapers",
+    name="clean-scraper",
     description="Command-line interface for downloading police agency reports and bodycam footage for the CLEAN project",
     long_description=read("README.md"),
     long_description_content_type="text/markdown",
     author="Big Local News",
-    url="https://github.com/biglocalnews/clean-scrapers",
+    url="https://github.com/biglocalnews/clean-scraper",
     packages=find_packages(),
     include_package_data=True,
     entry_points="""
         [console_scripts]
-        clean-scraper=clean.cli:main
+        clean-scraper=clean.cli:cli
     """,
     install_requires=[
         "click",
@@ -97,7 +97,7 @@ setup(
     use_scm_version={"version_scheme": version_scheme, "local_scheme": local_version},
     project_urls={
         "Maintainer": "https://github.com/biglocalnews",
-        "Source": "https://github.com/biglocalnews/clean-scrapers",
-        "Tracker": "https://github.com/biglocalnews/clean-scrapers/issues",
+        "Source": "https://github.com/biglocalnews/clean-scraper",
+        "Tracker": "https://github.com/biglocalnews/clean-scraper/issues",
     },
 )
