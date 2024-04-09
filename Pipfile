@@ -1,13 +1,37 @@
 [[source]]
+name = "pypi"
 url = "https://pypi.org/simple"
 verify_ssl = true
-name = "pypi"
-
-[packages]
-requests = "*"
-beautifulsoup4 = "*"
 
 [dev-packages]
+pytest = "*"
+pytest-vcr = "*"
+black = "*"
+twine = "*"
+flake8 = "*"
+coverage = "*"
+flake8-docstrings = "*"
+setuptools-scm = "*"
+us = "*"
+jinja2 = "*"
+flake8-bugbear = "*"
+pre-commit = "*"
+types-requests = "*"
+mypy = "*"
+typing-extensions = "*"
+types-retry = "*"
+types-beautifulsoup4 = "*"
+types-openpyxl = "*"
 
-[requires]
-python_version = "3.7"
+[packages]
+beautifulsoup4 = "*"
+html5lib = "*"
+requests = "*"
+pdfplumber = "*"
+tenacity = "*"
+click = "*"
+retry = "*"
+urllib3 = "1.26.18" # pegged to avoid test issue
+
+[pipenv]
+allow_prereleases = false
