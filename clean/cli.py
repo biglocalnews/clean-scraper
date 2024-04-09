@@ -24,7 +24,7 @@ def list_agencies():
         for slug in sorted(agency_slugs):
             click.echo(f" - {state}_{slug}")
     message = (
-        "\nTo scrape an agency, pass a state slug (e.g. ca_san_diego_pd) as the "
+        "\nTo scrape an agency, pass an agency slug (e.g. ca_san_diego_pd) as the "
         "argument to the scrape command:\n\n\tclean-scraper scrape ca_san_diego_pd\n\n"
     )
     click.echo(message)
