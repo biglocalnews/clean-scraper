@@ -71,6 +71,7 @@ setup(
         "requests",
         "tenacity",
         "retry",
+        "us"
     ],
     license="Apache 2.0 license",
     zip_safe=False,
