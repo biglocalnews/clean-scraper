@@ -6,8 +6,32 @@ import click
 from . import Runner, utils
 
 
+
+@click.group()
+def cli():
+    pass
+
+
+@click.command(name="list")
+def list_agencies():
+    """List all available agencies and their slugs.
+
+    Agency slugs can then used to with the scrape subcommand
+    """
+    scrapers = utils.get_all_scrapers()
+    for state, agency_slugs in utils.get_all_scrapers().items():
+        click.echo(f"{state.upper()}:")
+        for slug in sorted(agency_slugs):
+            click.echo(f" - {state}_{slug}")
+    message = (
+        "\nTo scrape an agency, pass a state slug (e.g. ca_san_diego_pd) as the "
+        "argument to the scrape command:\n\n\tclean-scraper scrape ca_san_diego_pd\n\n"
+    )
+    click.echo(message)
+
+
 @click.command()
-@click.argument("scrapers", nargs=-1)
+@click.argument("agency", nargs=-1)
 @click.option(
     "--data-dir",
     default=utils.CLEAN_DATA_DIR,
@@ -34,18 +58,19 @@ from . import Runner, utils
     ),
     help="Set the logging level",
 )
-def main(
-    scrapers: list,
+def scrape(
+    agency: str,
     data_dir: Path,
     cache_dir: Path,
     delete: bool,
+    list_agencies: bool,
     log_level: str,
 ):
-    """
+    '''
     Command-line interface for downloading CLEAN files.
 
     SCRAPERS -- a list of one or more postal codes to scrape. Pass `all` to scrape all supported states and territories.
-    """
+    '''
     # Set higher log-level on third-party libs that use DEBUG logging,
     # In order to limit debug logging to our library
     logging.getLogger("urllib3").setLevel(logging.ERROR)
@@ -74,6 +99,8 @@ def main(
         # Try running the scraper
         runner.scrape(scrape)
 
+cli.add_command(list_agencies)
+cli.add_command(scrape)
 
 if __name__ == "__main__":
-    main()
+    cli()

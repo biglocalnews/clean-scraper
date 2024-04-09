@@ -6,6 +6,7 @@ from pathlib import Path
 from time import sleep
 
 import requests
+import us
 from retry import retry
 
 logger = logging.getLogger(__name__)
@@ -133,16 +134,23 @@ def write_dict_rows_to_csv(output_path, headers, rows, mode="w", extrasaction="r
 
 
 def get_all_scrapers():
-    """Get all the states and agencies that have scrapers.
+    """Get all the agencies that have scrapers.
 
-    Returns: List of lower-case post abbreviations.
+    Returns: Dictionary of agency slugs grouped by state postal.
     """
     this_dir = Path(__file__).parent
-    scrapers_dir = this_dir / "scrapers"
-    return sorted(
-        p.stem for p in scrapers_dir.glob("*.py") if "__init__.py" not in str(p)
-    )
-
+    # Filter out anything not in a state folder
+    abbrevs = [state.abbr.lower() for state in us.states.STATES]
+    # Get all folders in dir
+    folders = [p for p in Path(__file__).parent.iterdir() if p.is_dir()]
+    state_folders = [p for p in folders if p.stem in abbrevs]
+    scrapers = {}
+    for state_folder in state_folders:
+        state = state_folder.stem
+        for mod in state_folder.iterdir():
+            if not mod.stem.startswith("__init"):
+                scrapers.setdefault(state, []).append(mod.stem)
+    return scrapers
 
 @retry(tries=3, delay=15, backoff=2)
 def get_url(
