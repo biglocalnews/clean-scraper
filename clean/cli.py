@@ -31,7 +31,7 @@ def list_agencies():
 
 
 @click.command()
-@click.argument("agency", nargs=-1)
+@click.argument("agency")
 @click.option(
     "--data-dir",
     default=utils.CLEAN_DATA_DIR,
@@ -58,23 +58,32 @@ def list_agencies():
     ),
     help="Set the logging level",
 )
+@click.option(
+    "--throttle",
+    "-t",
+    default=0,
+    help="Set throttle on scraping in seconds. Default is no delay on file downloads.",
+)
 def scrape(
     agency: str,
     data_dir: Path,
     cache_dir: Path,
     delete: bool,
-    list_agencies: bool,
     log_level: str,
+    throttle: int
 ):
-    '''
+    """
     Command-line interface for downloading CLEAN files.
 
-    SCRAPERS -- a list of one or more postal codes to scrape. Pass `all` to scrape all supported states and territories.
-    '''
+    AGENCY -- An agency slug (e.g. ca_san_diego_pd) to scrape. 
+    
+    Use the 'list' command to see available agencies and their slugs.
+
+      clean-scraper list
+    """
     # Set higher log-level on third-party libs that use DEBUG logging,
     # In order to limit debug logging to our library
     logging.getLogger("urllib3").setLevel(logging.ERROR)
-    logging.getLogger("pdfminer").setLevel(logging.WARNING)
 
     # Local logging config
     logging.basicConfig(level=log_level, format="%(asctime)s - %(name)s - %(message)s")
@@ -83,21 +92,16 @@ def scrape(
     # Runner config
     data_dir = Path(data_dir)
     cache_dir = Path(cache_dir)
-    runner = Runner(data_dir, cache_dir)
+    runner = Runner(data_dir, cache_dir, throttle)
 
     # Delete files, if asked
     if delete:
         logger.info("Deleting files generated from previous scraper run.")
         runner.delete()
 
-    # If the user has asked for all states, give it to 'em
-    if "all" in scrapers:
-        scrapers = utils.get_all_scrapers()
+    # Try running the scraper
+    runner.scrape(agency)
 
-    # Loop through the states
-    for scrape in scrapers:
-        # Try running the scraper
-        runner.scrape(scrape)
 
 cli.add_command(list_agencies)
 cli.add_command(scrape)
