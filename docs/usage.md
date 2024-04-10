@@ -1,6 +1,6 @@
 # Usage
 
-You can use the `clean-scraper` command-line tool and various subcommands (more on that below) to scrape available agencies by supplying an agency "slug". 
+You can use the `clean-scraper` command-line tool and various subcommands (more on that below) to scrape available agencies by supplying an agency "slug".
 
 These are short, headline-y names that combine a state postal code and a terse name for the agency.
 
@@ -27,6 +27,8 @@ clean-scraper scrape-meta ca_san_diego_pd
 # Download files
 clean-scraper scrape ca_san_diego_pd
 ```
+
+> **NOTE**: Always run `scrape-meta` at least once initially. It generates output required by the `scrape` subcommand.
 
 To use the `clean` library in Python, import an agency's scraper and run it directly.
 
