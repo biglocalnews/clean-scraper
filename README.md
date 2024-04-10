@@ -1,4 +1,4 @@
-# CLEAN scrapers
+# CLEAN Scraper Project
 
 Welcome to the `clean-scraper` project!
 
