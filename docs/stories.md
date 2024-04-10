@@ -1,6 +1,6 @@
 # Accountability Stories
 
-The CLEAN project and Big Local News have already produced a number of stories in the last few years based on review of thousands of hours of police body camera footage, use-of-force reports and disciplinary records. Below is a sampling of the work from a variety of outlets that where that work has appeared.
+The CLEAN project and Big Local News have already produced a number of stories in the last few years based on review of thousands of hours of police body camera footage, use-of-force reports and disciplinary records. Below is a sampling of stories that appeared in partner publications.
 
 - [Revealed: at least 22 Californians have died while being held face down by police since 2016](https://www.theguardian.com/us-news/2024/feb/28/california-police-officers-prone-restraint-deaths)
 - [Losing control: When San Jose police confront people in mental health crisis, why do they end up hurting them so often?](https://journalism.berkeley.edu/projects/losing-control-when-san-jose-police-confront-people-in-mental-health-crisis-why-do-they-end-up-hurting-them-so-often/)
