@@ -50,6 +50,7 @@ def local_version(version):
     """
     return ""
 
+
 setup(
     name="clean-scraper",
     description="Command-line interface for downloading police agency reports and bodycam footage for the CLEAN project",
@@ -71,7 +72,7 @@ setup(
         "requests",
         "tenacity",
         "retry",
-        "us"
+        "us",
     ],
     license="Apache 2.0 license",
     zip_safe=False,

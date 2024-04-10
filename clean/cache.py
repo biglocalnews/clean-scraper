@@ -73,11 +73,12 @@ class Cache:
             return list(csv.reader(fh))
 
     def download(
-        self, name: str,
+        self,
+        name: str,
         url: str,
-        encoding: typing.Optional[str] = None, 
+        encoding: typing.Optional[str] = None,
         force: bool = False,
-        **kwargs
+        **kwargs,
     ) -> Path:
         """
         Download the provided URL and save it in the cache *if* it doesn't already exist in cache.

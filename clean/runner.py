@@ -53,7 +53,9 @@ class Runner:
         state_mod = import_module(f"clean.{state}.{slug}")
         # Run the scrape method
         logger.info(f"Scraping {agency_slug}")
-        data_path = state_mod.scrape(self.data_dir, self.cache_dir, throttle=self.throttle)
+        data_path = state_mod.scrape(
+            self.data_dir, self.cache_dir, throttle=self.throttle
+        )
         # Run the path to the data file
         logger.info(f"Generated {data_path}")
         return data_path

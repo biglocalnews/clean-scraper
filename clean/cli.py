@@ -6,7 +6,6 @@ import click
 from . import Runner, utils
 
 
-
 @click.group()
 def cli():
     pass
@@ -70,13 +69,13 @@ def scrape(
     cache_dir: Path,
     delete: bool,
     log_level: str,
-    throttle: int
+    throttle: int,
 ):
     """
     Command-line interface for downloading CLEAN files.
 
-    AGENCY -- An agency slug (e.g. ca_san_diego_pd) to scrape. 
-    
+    AGENCY -- An agency slug (e.g. ca_san_diego_pd) to scrape.
+
     Use the 'list' command to see available agencies and their slugs.
 
       clean-scraper list

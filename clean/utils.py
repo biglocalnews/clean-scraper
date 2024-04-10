@@ -152,6 +152,7 @@ def get_all_scrapers():
                 scrapers.setdefault(state, []).append(mod.stem)
     return scrapers
 
+
 @retry(tries=3, delay=15, backoff=2)
 def get_url(
     url, user_agent="Big Local News (biglocalnews.org)", session=None, **kwargs
