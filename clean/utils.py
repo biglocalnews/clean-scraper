@@ -1,4 +1,5 @@
 import csv
+import importlib
 import logging
 import os
 from pathlib import Path
@@ -135,19 +136,22 @@ def write_dict_rows_to_csv(output_path, headers, rows, mode="w", extrasaction="r
 def get_all_scrapers():
     """Get all the agencies that have scrapers.
 
-    Returns: Dictionary of agency slugs grouped by state postal.
+    Returns: List of dicts containing agency slug and name
     """
-    # Filter out anything not in a state folder
-    abbrevs = [state.abbr.lower() for state in us.states.STATES]
     # Get all folders in dir
     folders = [p for p in Path(__file__).parent.iterdir() if p.is_dir()]
+    # Filter out anything not in a state folder
+    abbrevs = [state.abbr.lower() for state in us.states.STATES]
     state_folders = [p for p in folders if p.stem in abbrevs]
     scrapers = {}
     for state_folder in state_folders:
         state = state_folder.stem
-        for mod in state_folder.iterdir():
-            if not mod.stem.startswith("__init"):
-                scrapers.setdefault(state, []).append(mod.stem)
+        for mod_path in state_folder.iterdir():
+            if not mod_path.stem.startswith("__init"):
+                agency_mod = importlib.import_module(f"clean.{state}.{mod_path.stem}")
+                scrapers.setdefault(state, []).append(
+                    {"slug": f"{state}_{mod_path.stem}", "agency": agency_mod.Site.name}
+                )
     return scrapers
 
 
