@@ -1,13 +1,21 @@
 # CLEAN scrapers
 
-This repo contains scrapers to gather police bodycam video footage and other files from police department websites, as part of the Community Law Enforcement Accountability Network.
+Welcome to the `clean-scraper` project!
 
-We welcome open-source contributions to this project. If you'd like to pitch in, check out the [growing list of agencies](https://docs.google.com/spreadsheets/d/e/2PACX-1vTBcJKRsufBPYLsX92ZhaHrjV7Qv1THMO4EBhOCmEos4ayv6yB6d9-VXlaKNr5FGaViP20qXbUvJXgL/pubhtml?gid=0&single=true) we need to scrape and ping us in Discussions :point_up: to claim an agency.
+This repo contains scrapers to gather police bodycam video footage and other files from police department websites, as part of the Community Law Enforcement Accountability Network (CLEAN).
 
-> :warning: This is a new scraping effort (as of March 2024). We're planning to provide Developer guidelines and sample code in the near future. In the meantime, please ping if you have questions about how to get started.
+The CLEAN project is a collaborative effort between the ACLU, [Big Local News][], at Stanford, the [UC Berkeley Investigative Reporting Program][], and a variety of civil liberty organizations and news partners around the country. We're gathering police body camera footage, disciplinary records and other important information to help shine a light on the use of harmful and lethal force by law enforcement.
+
+Our accountability reporting has produced a number of [news stories](docs/stories.md) already, but there's still much work to be done.
+
+We welcome open-source contributions to this project. Or if you'd just like to nab our code for your own purposes, you're welcome to do so.
+
+Please check out the resources below to get started:
+
+- [Usage docs](docs/usage.md) - For folks who just need the code
+- [Contributor docs](docs/contributing.md) - Want to write a scraper? Check this out.
+- [Maintainer docs](docs/maintainers.md) - For those intrepid souls helping to manage the project
 
 
-## Scrapers
-
-- CA
-  - san_diego_pd
+[Big Local News]: https://biglocalnews.org/content/about/
+[UC Berkeley Investigative Reporting Program]:https://journalism.berkeley.edu/programs/mj/investigative-reporting/
