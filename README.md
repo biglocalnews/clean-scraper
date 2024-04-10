@@ -15,7 +15,7 @@ Please check out the resources below to get started:
 - [Usage docs](docs/usage.md) - For folks who just need the code
 - [Contributor docs](docs/contributing.md) - Want to write a scraper? Check this out.
 - [Maintainer docs](docs/maintainers.md) - For those intrepid souls helping to manage the project
-
+- Ping us in ☝️[Discussions](https://github.com/biglocalnews/clean-scraper/discussions) or submit a GitHub [Issue](https://github.com/biglocalnews/clean-scraper/issues)
 
 [Big Local News]: https://biglocalnews.org/content/about/
 [UC Berkeley Investigative Reporting Program]:https://journalism.berkeley.edu/programs/mj/investigative-reporting/
