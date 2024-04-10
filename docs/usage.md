@@ -1,6 +1,14 @@
 # Usage
 
-You can use the `clean-scraper` command-line tool to scrape available agencies by supplying agency slugs. It will write files, by default, to a hidden directory in the user's home directory. On Apple and Linux systems, this will be `~/.clean-scraper`.
+You can use the `clean-scraper` command-line tool and various subcommands (more on that below) to scrape available agencies by supplying an agency "slug". 
+
+These are short, headline-y names that combine a state postal code and a terse name for the agency.
+
+For example, `ca_san_diego_pd` is the slug for the San Diego Police Department in California.
+
+Metadata about available videos and other files, along with the downloads themselves, are written to a hidden directory in the user's home directory by default. On Apple and Linux systems, this will be `~/.clean-scraper`.
+
+## Find the agency slug
 
 To run a scraper, you must first know its agency "slug" (a state postal code + short agency name):
 
@@ -13,6 +21,10 @@ clean-scraper list
 You can then run a scraper for an agency using its slug:
 
 ```bash
+# Scrape metadata about available files
+clean-scraper scrape-meta ca_san_diego_pd
+
+# Download files
 clean-scraper scrape ca_san_diego_pd
 ```
 
