@@ -54,9 +54,9 @@ def download_index_pages(
         html = cache.read(base_file)
         soup = BeautifulSoup(html, "html.parser")
         page_count = int(
-                soup.find_all("li", class_="pager__item")[-1]  # last <li> in the pager
-                .a.attrs["href"]  # the <a> tag inside the <li>  # will be ?page=X
-                .split("=")[-1]  # get the X
+            soup.find_all("li", class_="pager__item")[-1]  # last <li> in the pager
+            .a.attrs["href"]  # the <a> tag inside the <li>  # will be ?page=X
+            .split("=")[-1]  # get the X
         )
     if current_page != page_count:
         # Recursively call this function to get the next page
