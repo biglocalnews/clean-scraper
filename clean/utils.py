@@ -49,7 +49,7 @@ def create_directory(path: Path, is_file: bool = False):
     directory.mkdir(parents=True)
 
 
-def fetch_if_not_cached(filename, url, **kwargs):
+def fetch_if_not_cached(filename, url, throttle=0, **kwargs):
     """Download files if they're not already saved.
 
     Args:
@@ -66,7 +66,7 @@ def fetch_if_not_cached(filename, url, **kwargs):
         else:
             with open(filename, "wb") as outfile:
                 outfile.write(response.content)
-        sleep(2)  # Pause between requests
+        sleep(throttle)  # Pause between requests
     return
 
 
