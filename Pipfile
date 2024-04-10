@@ -22,6 +22,7 @@ typing-extensions = "*"
 types-retry = "*"
 types-beautifulsoup4 = "*"
 types-openpyxl = "*"
+blacken-docs = "*"
 
 [packages]
 beautifulsoup4 = "*"
