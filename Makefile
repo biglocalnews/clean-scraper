@@ -116,9 +116,9 @@ build-release: ## builds source and wheel package
 # Extras
 #
 
-format: ## automatically format Python code with black
+format: ## Run and apply all pre-commit hooks (black, etc)
 	$(call banner,       🪥 Cleaning code 🪥)
-	@$(PIPENV) black .
+	@$(PIPENV) pre-commit run --all-files
 
 
 help: ## Show this help. Example: make help
