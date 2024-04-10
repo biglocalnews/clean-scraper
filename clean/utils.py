@@ -1,7 +1,6 @@
 import csv
 import logging
 import os
-import typing
 from pathlib import Path
 from time import sleep
 
@@ -138,7 +137,6 @@ def get_all_scrapers():
 
     Returns: Dictionary of agency slugs grouped by state postal.
     """
-    this_dir = Path(__file__).parent
     # Filter out anything not in a state folder
     abbrevs = [state.abbr.lower() for state in us.states.STATES]
     # Get all folders in dir

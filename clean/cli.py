@@ -8,6 +8,7 @@ from . import Runner, utils
 
 @click.group()
 def cli():
+    """Command-line interface for downloading CLEAN files."""
     pass
 
 
@@ -17,9 +18,8 @@ def list_agencies():
 
     Agency slugs can then used to with the scrape subcommand
     """
-    scrapers = utils.get_all_scrapers()
     for state, agency_slugs in utils.get_all_scrapers().items():
-        click.echo(f"{state.upper()}:")
+        click.echo(f"\n{state.upper()}:")
         for slug in sorted(agency_slugs):
             click.echo(f" - {state}_{slug}")
     message = (

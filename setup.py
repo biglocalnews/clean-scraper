@@ -1,15 +1,8 @@
 #!/usr/bin/env python
 """Configure the package for distribution."""
-import distutils.cmd
 import os
-from importlib import import_module
-from pathlib import Path
 
-import jinja2
-import us
 from setuptools import find_packages, setup
-
-import clean
 
 
 def read(file_name):

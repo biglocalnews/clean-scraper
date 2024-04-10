@@ -9,6 +9,7 @@ from .. import utils
 
 
 def scrape(data_dir=utils.CLEAN_DATA_DIR, cache_dir=utils.CLEAN_CACHE_DIR, throttle=0):
+    """Scrape San Diego Police Department for SB16/SB1421/AB748 data."""
     cache = Cache(cache_dir)
     # This module
     mod = Path(__file__)
@@ -31,7 +32,7 @@ def scrape(data_dir=utils.CLEAN_DATA_DIR, cache_dir=utils.CLEAN_CACHE_DIR, throt
 def download_index_pages(
     base_url, cache, cache_suffix, throttle, page_count, current_page, index_pages=[]
 ):
-    """Download index pages for SB16/SB1421/AB748
+    """Download index pages for SB16/SB1421/AB748.
 
     Index pages link to child pages containing videos and
     other files related to use-of-force and disciplinary incidents.
@@ -68,8 +69,8 @@ def download_index_pages(
     return index_pages
 
 
-### LEGACY CODE BELOW ###
-def scrape_list_page(cache, top_level_urls, base_url, throttle):
+# LEGACY CODE BELOW #
+def _scrape_list_page(cache, top_level_urls, base_url, throttle):
     second_level_urls = {}
     for top_url in top_level_urls:
         page = requests.get(top_url)
@@ -78,21 +79,21 @@ def scrape_list_page(cache, top_level_urls, base_url, throttle):
         six_columns = soup.find_all("div", class_="six columns")
         for elem in six_columns:
             paragraph_with_link = elem.find("p")
-            if paragraph_with_link == None:
+            if paragraph_with_link is None:
                 continue
             else:
                 text = paragraph_with_link.text
                 elem_a = paragraph_with_link.find("a")
-                if elem_a == None:
+                if elem_a is None:
                     continue
                 else:
                     full_link = base_url + elem_a["href"]
                     second_level_urls[full_link] = text
-    download_case_files(base_url, second_level_urls)
+    _download_case_files(base_url, second_level_urls)
     return second_level_urls
 
 
-def download_case_files(base_url, second_level_urls):
+def _download_case_files(base_url, second_level_urls):
     all_case_content_links = []
     for url in second_level_urls.keys():
         page = requests.get(url)
