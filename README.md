@@ -4,7 +4,7 @@ Welcome to the `clean-scraper` project!
 
 This repo contains scrapers to gather police bodycam video footage and other files from police department websites, as part of the Community Law Enforcement Accountability Network (CLEAN).
 
-The CLEAN project is a collaborative effort between the ACLU, [Big Local News][], at Stanford, the [UC Berkeley Investigative Reporting Program][], and a variety of civil liberty organizations and news partners around the country. We're gathering police body camera footage, disciplinary records and other important information to help shine a light on the use of harmful and lethal force by law enforcement.
+The CLEAN project is a collaborative effort between [Big Local News][], at Stanford, the [UC Berkeley Investigative Reporting Program][], and a variety of civil liberty organizations and news partners around the country. We're gathering police body camera footage, disciplinary records and other important information to help shine a light on the use of harmful and lethal force by law enforcement.
 
 Our accountability reporting has produced a number of [news stories](docs/stories.md) already, but there's still much work to be done.
 
