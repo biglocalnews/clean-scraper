@@ -52,7 +52,7 @@ class Runner:
         slug = agency_slug[3:].strip().lower()
         state_mod = import_module(f"clean.{state}.{slug}")
         # Run the scrape method
-        logger.info(f"Scraping {state}")
+        logger.info(f"Scraping {agency_slug}")
         data_path = state_mod.scrape(self.data_dir, self.cache_dir, throttle=self.throttle)
         # Run the path to the data file
         logger.info(f"Generated {data_path}")
