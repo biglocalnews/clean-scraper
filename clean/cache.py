@@ -31,8 +31,8 @@ class Cache:
             cache.files('fl')
 
     Args:
-        path (str): Full path to cache directory. Defaults to WARN_ETL_DIR
-            or, if env var not specified, $HOME/.warn-scraper/cache
+        path (str): Full path to cache directory. Defaults to CLEAN_ETL_DIR
+            or, if env var not specified, $HOME/.clean-scraper/cache
     """
 
     def __init__(self, path=None):
@@ -48,7 +48,7 @@ class Cache:
         """Read text file from cache.
 
         Args:
-            name (str): Partial name, relative to cache dir (eg. 'fl/2021_page_1.html')
+            name (str): Partial name, relative to cache dir (eg. 'ca_san_diego_pd/2024_page_1.html')
 
         Returns:
             File content as string or error if file doesn't
@@ -62,7 +62,7 @@ class Cache:
         """Read csv file from cache.
 
         Args:
-            name (str): Partial name, relative to cache dir (eg. 'fl/2021_page_1.html')
+            name (str): Partial name, relative to cache dir (eg. 'ca_san_diego_pd/2024_page_1.html')
 
         Returns:
             list of rows
@@ -73,40 +73,45 @@ class Cache:
             return list(csv.reader(fh))
 
     def download(
-        self, name: str, url: str, encoding: typing.Optional[str] = None, **kwargs
+        self, name: str,
+        url: str,
+        encoding: typing.Optional[str] = None, 
+        force: bool = False,
+        **kwargs
     ) -> Path:
         """
-        Download the provided URL and save it in the cache.
+        Download the provided URL and save it in the cache *if* it doesn't already exist in cache.
 
         Args:
-            name (str): The path where the file will be saved. Can be a simple string like "ia/data.xlsx"
+            name (str): The path where the file will be saved. Can be a simple string like "ca_san_diego_pd/video.mp4"
             url (str): The URL to download
             encoding (str): The encoding of the response. Optional.
+            force (bool): If True, will download the file if it already exists in the cache.
             **kwargs: Additional arguments to pass to requests.get()
 
-        Returns: The Path where the file was saved
+        Returns: The local file system path where the file is cached
         """
+        # Open the local Path
+        local_path = Path(self.path, name)
+        local_path.parent.mkdir(parents=True, exist_ok=True)
         # Request the URL
-        logger.debug(f"Downloading {url}")
+        if not force and self.exists(name):
+            logger.debug(f"File found in cache: {local_path}")
+            return local_path
+
         with get_url(url, stream=True, **kwargs) as r:
             # If there's no encoding, set it
             if encoding:
                 r.encoding = encoding
             elif r.encoding is None:
-                r.encoding = "utf-7"
-
-            # Open the local Path
-            out_path = Path(self.path, name)
-            out_path.parent.mkdir(parents=True, exist_ok=True)
-            logger.debug(f"Writing to {out_path}")
-
+                r.encoding = "utf-8"
+            logger.debug(f"Downloading {url} to {local_path}")
             # Write out the file in little chunks
-            with open(out_path, "wb") as f:
+            with open(local_path, "wb") as f:
                 for chunk in r.iter_content(chunk_size=8192):
                     f.write(chunk)
-
         # Return the path
-        return out_path
+        return local_path
 
     def write(self, name, content):
         """Save file contents to cache.
@@ -116,16 +121,16 @@ class Cache:
 
         For example: ::
 
-            $HOME/.clean-scraper/cache/ca/san_diego_pd
+            $HOME/.clean-scraper/cache/ca_san_diego_pd/2024_page_1.html
 
-        Provide file contents and the partial name for (relative to cache directory)
+        Provide file contents and the partial name (relative to cache directory)
         where file should written. The partial file path can include additional
-        directories (e.g. 'ca/san_diego_pd/2024_page_1.html'), which will be created if they
+        directories (e.g. 'ca_san_diego_pd/2024_page_1.html'), which will be created if they
         don't exist.
 
         Example: ::
 
-            cache.write("ca/san_diego_pd/2024_page_1.html", html)
+            cache.write("ca_san_diego_pd/2024_page_1.html", html)
 
         Args:
             name (str): Partial name, relative to cache dir, where content should be saved.
