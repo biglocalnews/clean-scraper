@@ -1,4 +1,5 @@
 import time
+import urllib.parse
 from pathlib import Path
 from typing import List
 
@@ -17,16 +18,21 @@ class Site:
 
     name = "San Diego Police Department"
 
-    def __init__(self, data_dir=utils.CLEAN_DATA_DIR, cache_dir=utils.CLEAN_CACHE_DIR):
+    def __init__(
+        self,
+        data_dir: Path = utils.CLEAN_DATA_DIR,
+        cache_dir: Path = utils.CLEAN_CACHE_DIR,
+    ):
         """Initialize a new instance.
 
         Args:
             data_dir (Path): The directory where downstream processed files/data will be saved
             cache_dir (Path): The directory where files will be cached
         """
-        # Start page contains list of "detail"/child pages with links to the SB16/SB1421/AB748 videos and files
+        self.base_url = "https://www.sandiego.gov"
+        # Initial disclosure page (aka where they start complying with law) contains list of "detail"/child pages with links to the SB16/SB1421/AB748 videos and files
         # along with additional index pages
-        self.base_url = "https://www.sandiego.gov/police/data-transparency/mandated-disclosures/sb16-sb1421-ab748"
+        self.disclosure_url = f"{self.base_url}/police/data-transparency/mandated-disclosures/sb16-sb1421-ab748"
         self.data_dir = data_dir
         self.cache_dir = cache_dir
         self.cache = Cache(cache_dir)
@@ -39,9 +45,7 @@ class Site:
     def scrape_meta(self, throttle: int = 0):
         """Gather metadata on downloadable files (videos, etc.)."""
         # Run the scraper on home page
-        first_index_page_local = self._base_url = self._download_index_page(
-            self.base_url
-        )
+        first_index_page_local = self._download_index_page(self.disclosure_url)
         local_index_pages = [first_index_page_local]
         # Extract URLs for all index pages from home page
         index_page_urls = self._get_index_page_urls(first_index_page_local)
@@ -49,12 +53,53 @@ class Site:
         for url in index_page_urls:
             time.sleep(throttle)
             local_index_pages.append(self._download_index_page(url))
-        # TODO: Get the child pages and, you know, actually scrape file metadata
-        # child_pages = []
-        # return child_pages
-        return local_index_pages
+        # Gather child pages ({page name, url, source index page})
+        child_pages = []
+        for index_page in local_index_pages:
+            child_pages.extend(self._get_child_page(index_page, throttle))
+        # Save metadata
+        self.cache.write(self.data_dir / "files_meta.json", child_pages)
+        return child_pages
 
     # Helper functions
+    def _get_child_page(self, index_page: Path, throttle: int = 0) -> List[dict]:
+        """Get URLs for child pages from index pages."""
+        html = self.cache.read(index_page)
+        soup = BeautifulSoup(html, "html.parser")
+        # Get all the child page URLs
+        parent_div = soup.find("div", class_="view-content")
+        links = parent_div.find_all("a")  # type: ignore
+        child_pages = []
+        for anchor in links:
+            time.sleep(throttle)
+            page_meta = {
+                "source_index_page": index_page,  # index page where this child page was found
+                "source_name": anchor.text.strip(),
+                "url": urllib.parse.urljoin(self.base_url, anchor.attrs["href"]),
+            }
+            page_meta["cache_name"] = (
+                f"{page_meta['source_name'].replace(' ', '_')}.html"
+            )
+            page_meta.update(
+                urllib.parse.parse_qs(urllib.parse.urlparse(page_meta["url"]).query)
+            )
+            # Stash child pages in folder matching name of index page where it's listed
+            # Construct index page directory
+            index_page_dir = f"{self.cache_suffix}/{index_page.stem}"
+            # Construct local file path inside index page directory
+            relative_path = f"{index_page_dir}/{page_meta['cache_name']}"
+            # Download the child page
+            cache_path = self.cache.download(relative_path, page_meta["url"], "utf-8")
+            # Update page metadata with full path in cache and relative path
+            page_meta.update(
+                {
+                    "cache_path": cache_path,
+                    "relative_path": relative_path,
+                }
+            )
+            child_pages.append(page_meta)
+        return child_pages
+
     def _get_index_page_urls(self, first_index_page: Path) -> List[str]:
         """Get the URLs for all index pages."""
         # Read the cached HTML file for home page
@@ -68,8 +113,8 @@ class Site:
         )  # type: ignore
         # Construct page links
         index_page_urls = []
-        for num in range(1, last_page + 1):  # type: ignore
-            index_page_urls.append(f"{self.base_url}?page={num}")
+        for num in range(1, int(last_page) + 1):  # type: ignore
+            index_page_urls.append(f"{self.disclosure_url}?page={num}")
         return index_page_urls
 
     def _download_index_page(self, url: str) -> Path:
