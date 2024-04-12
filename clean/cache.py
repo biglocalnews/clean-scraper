@@ -35,7 +35,7 @@ class Cache:
             or, if env var not specified, $HOME/.clean-scraper/cache
     """
 
-    def __init__(self, path=None):
+    def __init__(self, path: Path | None):
         """Initialize a new instance."""
         self.root_dir = self._path_from_env or self._path_default
         self.path = path or str(Path(self.root_dir, "cache"))
