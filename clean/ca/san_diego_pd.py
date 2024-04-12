@@ -60,14 +60,15 @@ class Site:
         # Read the cached HTML file for home page
         html = self.cache.read(first_index_page)
         soup = BeautifulSoup(html, "html.parser")
+        # Gross, but necessary to pass mypy type checking
         last_page = (
-            soup.find("li", class_="pager__item pager__item--last")
-            .a.attrs["href"]
-            .split("?page=")[-1]
-        )
+            soup.find("li", class_="pager__item pager__item--last")  # type: ignore
+            .a.attrs["href"]  # type: ignore
+            .split("?page=")[-1]  # type: ignore
+        )  # type: ignore
         # Construct page links
         index_page_urls = []
-        for num in range(1, int(last_page) + 1):
+        for num in range(1, last_page + 1):  # type: ignore
             index_page_urls.append(f"{self.base_url}?page={num}")
         return index_page_urls
 
