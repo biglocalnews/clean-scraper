@@ -36,14 +36,24 @@ class Site:
         self.data_dir = data_dir
         self.cache_dir = cache_dir
         self.cache = Cache(cache_dir)
+
+    @property
+    def agency_slug(self) -> str:
+        """Construct the agency slug."""
         # Use module path to construct agency slug, which we'll use downstream
         mod = Path(__file__)
         state_postal = mod.parent.stem
-        # to create a subdir inside the main cache directory to stash files for this agency
-        self.cache_suffix = f"{state_postal}_{mod.stem}"  # ca_san_diego_pd
+        return f"{state_postal}_{mod.stem}"  # ca_san_diego_pd
 
-    def scrape_meta(self, throttle: int = 0):
-        """Gather metadata on downloadable files (videos, etc.)."""
+    def scrape_meta(self, throttle: int = 0) -> Path:
+        """Gather metadata on downloadable files (videos, etc.).
+
+        Args:
+            throttle (int): Number of seconds to wait between requests. Defaults to 0.
+
+        Returns:
+            Path: Local path of JSON file containing metadata on downloadable files
+        """
         # Run the scraper on home page
         first_index_page_local = self._download_index_page(self.disclosure_url)
         local_index_pages = [first_index_page_local]
@@ -57,11 +67,39 @@ class Site:
         child_pages = []
         for index_page in local_index_pages:
             child_pages.extend(self._get_child_page(index_page, throttle))
-        # Save metadata
-        self.cache.write(self.data_dir / "files_meta.json", child_pages)
-        return child_pages
+        downloadable_files = self._get_asset_links()
+        return downloadable_files
 
     # Helper functions
+    def _get_asset_links(self) -> List[dict]:
+        """Extract link to files and videos from child pages."""
+        metadata = []
+        # Process child page HTML files in index page folders,
+        # building a list of file metadata (name, url, etc.) along the way
+        for item in Path(self.cache_dir, self.agency_slug).iterdir():
+            if item.is_dir() and item.name.startswith("sb16"):
+                for html_file in item.iterdir():
+                    if html_file.suffix == ".html":
+                        html = self.cache.read(html_file)
+                        soup = BeautifulSoup(html, "html.parser")
+                        title = soup.find("h1").text
+                        links = soup.find("div", class_="view-content").find_all("a")
+                        # Save links to files, videos, etc with relevant metadata
+                        # for downstream processing
+                        for link in links:
+                            payload = {
+                                "title": title,
+                                "parent_page": str(html_file),
+                                "asset_url": link["href"],
+                                "name": link.text,
+                            }
+                            metadata.append(payload)
+        # Store the metadata in a JSON file in the data directory
+        outfile = self.data_dir.joinpath(f"{self.agency_slug}.json")
+        self.cache.write_json(outfile, metadata)
+        # Return path to metadata file for downstream use
+        return outfile
+
     def _get_child_page(self, index_page: Path, throttle: int = 0) -> List[dict]:
         """Get URLs for child pages from index pages."""
         html = self.cache.read(index_page)
@@ -85,7 +123,7 @@ class Site:
             )
             # Stash child pages in folder matching name of index page where it's listed
             # Construct index page directory
-            index_page_dir = f"{self.cache_suffix}/{index_page.stem}"
+            index_page_dir = f"{self.agency_slug}/{index_page.stem}"
             # Construct local file path inside index page directory
             relative_path = f"{index_page_dir}/{page_meta['cache_name']}"
             # Download the child page
@@ -124,16 +162,10 @@ class Site:
         other files related to use-of-force and disciplinary incidents.
 
         Returns:
-            Local path of downloadeded file
+            Local path of downloaded file
         """
         file_stem = url.split("/")[-1]
-        # Downstream index pages have a page GET parameter
-        try:
-            current_page = file_stem.split("?page=")[1]
-        # Home page doesn't have a page parameter
-        except IndexError:
-            current_page = "0"
-        base_file = f"{self.cache_suffix}/{file_stem}_index_page{current_page}.html"
+        base_file = f"{self.agency_slug}/{file_stem}.html"
         # Download the page (if it's not already cached)
         cache_path = self.cache.download(base_file, url, "utf-8")
         return cache_path
