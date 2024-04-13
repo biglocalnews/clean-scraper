@@ -5,6 +5,7 @@ import os
 import typing
 from os.path import expanduser, join
 from pathlib import Path
+from typing import Union
 
 from .utils import get_url
 
@@ -36,7 +37,7 @@ class Cache:
             or, if env var not specified, $HOME/.clean-scraper/cache
     """
 
-    def __init__(self, path: Path | None):
+    def __init__(self, path: Union[Path, None]):
         """Initialize a new instance."""
         self.root_dir = self._path_from_env or self._path_default
         self.path = path or str(Path(self.root_dir, "cache"))
@@ -157,7 +158,7 @@ class Cache:
             fh.write(content)
         return str(out)
 
-    def write_json(self, name: Path | str, files_meta: list[dict]) -> Path:
+    def write_json(self, name: Union[Path, str], files_meta: list[dict]) -> Path:
         """Save JSON data to cache.
 
         Typically, this should be an agency-specific directory inside the cache folder.
