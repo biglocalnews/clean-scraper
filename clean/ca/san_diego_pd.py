@@ -69,6 +69,33 @@ class Site:
             child_pages.extend(self._get_child_page(index_page, throttle))
         downloadable_files = self._get_asset_links()
         return downloadable_files
+    
+    def scrape(self, throttle: int = 0, filter: str = None) -> Path:
+        """Download file assets from agency.
+        
+        Args:
+            throttle (int): Number of seconds to wait between requests. Defaults to 0.
+            filter (str): Only download URLs that match the filter. Defaults to None.
+        
+        Returns:
+            Path: Local path of directory containing downloaded files
+        """
+        # Get metadata on downloadable files
+        metadata = self.cache.read_json(self.data_dir.joinpath(f"{self.agency_slug}.json"))
+        for asset in metadata:
+            url = asset['asset_url']
+            # Skip non-matching files if filter applied
+            if filter and filter not in url:
+                continue
+            # Get relative path to parent index_page directory
+            index_dir = asset["parent_page"].split(f"{self.agency_slug}/")[-1].rstrip('.html')
+            asset_name = asset['name'].replace(' ', '_')
+            download_path = Path(self.agency_slug, 'assets', index_dir, asset_name)
+            # Download the file to agency directory/assets/index_page_dir/case_name/file_name
+            # Example: 'ca_san_diego_pd/assets/sb16-sb1421-ab748/11-21-2022_IA_2022-013/November_21,_2022_IA_#2022-013_Audio_Interview_Complainant_Redacted_KM.wav'
+            time.sleep(throttle)
+            self.cache.download(str(download_path), url)
+
 
     # Helper functions
     def _get_asset_links(self) -> Path:
@@ -90,8 +117,8 @@ class Site:
                             payload = {
                                 "title": title,
                                 "parent_page": str(html_file),
-                                "asset_url": link["href"],
-                                "name": link.text,
+                                "asset_url": link["href"].replace('\n', ''),
+                                "name": link.text.strip().replace('\n', '')
                             }
                             metadata.append(payload)
         # Store the metadata in a JSON file in the data directory
