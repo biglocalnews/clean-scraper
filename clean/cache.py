@@ -72,6 +72,10 @@ class Cache:
         logger.debug(f"Reading CSV from cache {path}")
         with open(path) as fh:
             return list(csv.reader(fh))
+    
+    def read_json(self, name: Path):
+        with open(name) as fh:
+            return json.load(fh)
 
     def download(
         self,
