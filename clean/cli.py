@@ -114,13 +114,20 @@ def scrape_meta(
     "--data-dir",
     default=utils.CLEAN_DATA_DIR,
     type=click.Path(),
-    help="The Path were the results will be saved",
+    help="The Path were generated data/intermediate files will be saved",
 )
 @click.option(
     "--cache-dir",
     default=utils.CLEAN_CACHE_DIR,
     type=click.Path(),
     help="The Path where results can be cached",
+)
+@click.option(
+    "--filter",
+    "-f",
+    default=None,
+    type=str,
+    help="Only download files that match a filter str",
 )
 @click.option(
     "--delete/--no-delete",
@@ -146,6 +153,7 @@ def scrape(
     agency: str,
     data_dir: Path,
     cache_dir: Path,
+    filter: str,
     delete: bool,
     log_level: str,
     throttle: int,
@@ -158,6 +166,8 @@ def scrape(
     Use the 'list' command to see available agencies and their slugs.
 
       clean-scraper list
+
+    The 'scrape-meta' command must be run first to generate a JSON file containing metadata on downloadable files.
     """
     # Set higher log-level on third-party libs that use DEBUG logging,
     # In order to limit debug logging to our library
@@ -178,7 +188,7 @@ def scrape(
         runner.delete()
 
     # Try running the scraper
-    runner.scrape(agency)
+    runner.scrape(agency, filter=filter)
 
 
 cli.add_command(list_agencies)
