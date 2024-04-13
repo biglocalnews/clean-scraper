@@ -167,7 +167,7 @@ def scrape(
 
       clean-scraper list
 
-    The 'scrape-meta' command must be run first to generate a JSON file containing metadata on downloadable files.  
+    The 'scrape-meta' command must be run first to generate a JSON file containing metadata on downloadable files.
     """
     # Set higher log-level on third-party libs that use DEBUG logging,
     # In order to limit debug logging to our library

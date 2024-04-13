@@ -72,8 +72,16 @@ class Cache:
         logger.debug(f"Reading CSV from cache {path}")
         with open(path) as fh:
             return list(csv.reader(fh))
-    
-    def read_json(self, name: Path):
+
+    def read_json(self, name: Path) -> list[dict]:
+        """Read JSON file from cache.
+
+        Args:
+            name (str): Partial name, relative to cache dir (eg. 'exports/ca_san_diego_pd.json')
+
+        Returns:
+            list of dicts
+        """
         with open(name) as fh:
             return json.load(fh)
 
