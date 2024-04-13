@@ -71,7 +71,7 @@ class Site:
         return downloadable_files
 
     # Helper functions
-    def _get_asset_links(self) -> List[dict]:
+    def _get_asset_links(self) -> Path:
         """Extract link to files and videos from child pages."""
         metadata = []
         # Process child page HTML files in index page folders,
@@ -82,8 +82,8 @@ class Site:
                     if html_file.suffix == ".html":
                         html = self.cache.read(html_file)
                         soup = BeautifulSoup(html, "html.parser")
-                        title = soup.find("h1").text
-                        links = soup.find("div", class_="view-content").find_all("a")
+                        title = soup.find("div", "view-header").text.strip()  # type: ignore
+                        links = soup.find("div", class_="view-content").find_all("a")  # type: ignore
                         # Save links to files, videos, etc with relevant metadata
                         # for downstream processing
                         for link in links:

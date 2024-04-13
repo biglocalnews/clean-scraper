@@ -178,7 +178,7 @@ class Cache:
         else:
             out = Path(name)
         if not out.is_absolute():
-            full_path = self.path.joinpath(out)
+            full_path = self.path.joinpath(out)  # type: ignore
         else:
             full_path = out
         out.parent.mkdir(parents=True, exist_ok=True)
