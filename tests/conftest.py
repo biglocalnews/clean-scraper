@@ -1,5 +1,4 @@
 import csv
-import datetime
 import os
 from pathlib import Path
 
@@ -11,11 +10,13 @@ import pytest
 # and pass pytest caplog fixture to
 # a test function. More details here:
 #  https://vcrpy.readthedocs.io/en/latest/debugging.html
-# import vcr
-# import logging
-# logging.basicConfig() # you need to initialize logging, otherwise you will not see anything from vcrpy
-# vcr_log = logging.getLogger("vcr")
-# vcr_log.setLevel(logging.INFO)
+"""
+import vcr
+import logging
+logging.basicConfig() # you need to initialize logging, otherwise you will not see anything from vcrpy
+vcr_log = logging.getLogger("vcr")
+vcr_log.setLevel(logging.INFO)
+"""
 
 
 @pytest.fixture(scope="module")
