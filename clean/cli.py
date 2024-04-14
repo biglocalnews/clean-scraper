@@ -125,7 +125,7 @@ def scrape_meta(
 @click.option(
     "--filter",
     "-f",
-    default='',
+    default="",
     type=str,
     help="Only download files that match a filter str",
 )
