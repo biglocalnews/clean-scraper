@@ -1,9 +1,11 @@
 import csv
+import json
 import logging
 import os
 import typing
 from os.path import expanduser, join
 from pathlib import Path
+from typing import Union
 
 from .utils import get_url
 
@@ -35,7 +37,7 @@ class Cache:
             or, if env var not specified, $HOME/.clean-scraper/cache
     """
 
-    def __init__(self, path=None):
+    def __init__(self, path: Union[Path, None]):
         """Initialize a new instance."""
         self.root_dir = self._path_from_env or self._path_default
         self.path = path or str(Path(self.root_dir, "cache"))
@@ -71,6 +73,18 @@ class Cache:
         logger.debug(f"Reading CSV from cache {path}")
         with open(path) as fh:
             return list(csv.reader(fh))
+
+    def read_json(self, name: Path) -> list[dict]:
+        """Read JSON file from cache.
+
+        Args:
+            name (str): Partial name, relative to cache dir (eg. 'exports/ca_san_diego_pd.json')
+
+        Returns:
+            list of dicts
+        """
+        with open(name) as fh:
+            return json.load(fh)
 
     def download(
         self,
@@ -143,6 +157,48 @@ class Cache:
         with open(out, "w", newline="") as fh:
             fh.write(content)
         return str(out)
+
+    def write_json(self, name: Union[Path, str], files_meta: list[dict]) -> Path:
+        """Save JSON data to cache.
+
+        Typically, this should be an agency-specific directory inside the cache folder.
+
+        For example: ::
+
+            $HOME/.clean-scraper/cache/exports/ca_san_diego_pd.json
+
+        Provide file contents as a List of dictionaries and the relative path to a location inside
+        the cache directory or a full Path where the file should be written.
+
+        The relative file path can include additional directories
+        (e.g. 'ca_san_diego_pd/2024_page_1.html'), which will be created if they don't exist.
+
+        Example: ::
+
+            cache.write_json('~/.clean-scraper/exports/ca_san_diego_pd.json', metadata)
+            OR
+            cache.write_json('exports/ca_san_diego_pd/ca_san_diego_pd.json', metadata)
+
+        Args:
+            name (Path|str): Full path or partial path, relative to cache dir, where content should be saved.
+            content (list[dict]): List of dicts containing file metadata for downloadable assets
+
+        Returns:
+            Path: Full path to the saved file
+        """
+        if isinstance(name, Path):
+            out = name
+        else:
+            out = Path(name)
+        if not out.is_absolute():
+            full_path = self.path.joinpath(out)  # type: ignore
+        else:
+            full_path = out
+        out.parent.mkdir(parents=True, exist_ok=True)
+        logger.debug(f"Writing to cache {full_path}")
+        with open(full_path, "w", newline="") as fh:
+            json.dump(files_meta, fh, indent=4)
+        return full_path
 
     def files(self, subdir=".", glob_pattern="*"):
         """

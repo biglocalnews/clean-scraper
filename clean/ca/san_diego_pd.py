@@ -1,5 +1,7 @@
 import time
+import urllib.parse
 from pathlib import Path
+from typing import List
 
 from bs4 import BeautifulSoup
 
@@ -16,108 +18,186 @@ class Site:
 
     name = "San Diego Police Department"
 
-    def __init__(self, data_dir=utils.CLEAN_DATA_DIR, cache_dir=utils.CLEAN_CACHE_DIR):
+    def __init__(
+        self,
+        data_dir: Path = utils.CLEAN_DATA_DIR,
+        cache_dir: Path = utils.CLEAN_CACHE_DIR,
+    ):
         """Initialize a new instance.
 
         Args:
             data_dir (Path): The directory where downstream processed files/data will be saved
             cache_dir (Path): The directory where files will be cached
         """
-        # Start page contains list of "detail"/child pages with links to the SB16/SB1421/AB748 videos and files
+        self.base_url = "https://www.sandiego.gov"
+        # Initial disclosure page (aka where they start complying with law) contains list of "detail"/child pages with links to the SB16/SB1421/AB748 videos and files
         # along with additional index pages
-        self.base_url = "https://www.sandiego.gov/police/data-transparency/mandated-disclosures/sb16-sb1421-ab748"
+        self.disclosure_url = f"{self.base_url}/police/data-transparency/mandated-disclosures/sb16-sb1421-ab748"
         self.data_dir = data_dir
         self.cache_dir = cache_dir
         self.cache = Cache(cache_dir)
+
+    @property
+    def agency_slug(self) -> str:
+        """Construct the agency slug."""
         # Use module path to construct agency slug, which we'll use downstream
         mod = Path(__file__)
         state_postal = mod.parent.stem
-        # to create a subdir inside the main cache directory to stash files for this agency
-        self.cache_suffix = f"{state_postal}_{mod.stem}"  # ca_san_diego_pd
+        return f"{state_postal}_{mod.stem}"  # ca_san_diego_pd
 
-    def scrape_meta(self, throttle=0):
-        """Gather metadata on downloadable files (videos, etc.)."""
-        current_page = 0
-        page_count = None  # which we don't know until we get the first page
-        # This will be a list of paths to HTML pages that we cache locally
-        index_pages = self._download_index_pages(throttle, page_count, current_page)
-        # TODO: Get the child pages and, you know, actually scrape file metadata
-        return index_pages
+    def scrape_meta(self, throttle: int = 0) -> Path:
+        """Gather metadata on downloadable files (videos, etc.).
+
+        Args:
+            throttle (int): Number of seconds to wait between requests. Defaults to 0.
+
+        Returns:
+            Path: Local path of JSON file containing metadata on downloadable files
+        """
+        # Run the scraper on home page
+        first_index_page_local = self._download_index_page(self.disclosure_url)
+        local_index_pages = [first_index_page_local]
+        # Extract URLs for all index pages from home page
+        index_page_urls = self._get_index_page_urls(first_index_page_local)
+        # Download remaining index pages
+        for url in index_page_urls:
+            time.sleep(throttle)
+            local_index_pages.append(self._download_index_page(url))
+        # Gather child pages ({page name, url, source index page})
+        child_pages = []
+        for index_page in local_index_pages:
+            child_pages.extend(self._get_child_page(index_page, throttle))
+        downloadable_files = self._get_asset_links()
+        return downloadable_files
+
+    def scrape(self, throttle: int = 0, filter: str = "") -> List[Path]:
+        """Download file assets from agency.
+
+        Args:
+            throttle (int): Number of seconds to wait between requests. Defaults to 0.
+            filter (str): Only download URLs that match the filter. Defaults to None.
+
+        Returns:
+            List[Path]: List of local paths to downloaded files
+        """
+        # Get metadata on downloadable files
+        metadata = self.cache.read_json(
+            self.data_dir.joinpath(f"{self.agency_slug}.json")
+        )
+        downloaded_assets = []
+        for asset in metadata:
+            url = asset["asset_url"]
+            # Skip non-matching files if filter applied
+            if filter and filter not in url:
+                continue
+            # Get relative path to parent index_page directory
+            index_dir = (
+                asset["parent_page"].split(f"{self.agency_slug}/")[-1].rstrip(".html")
+            )
+            asset_name = asset["name"].replace(" ", "_")
+            download_path = Path(self.agency_slug, "assets", index_dir, asset_name)
+            # Download the file to agency directory/assets/index_page_dir/case_name/file_name
+            # Example: 'ca_san_diego_pd/assets/sb16-sb1421-ab748/11-21-2022_IA_2022-013/November_21,_2022_IA_#2022-013_Audio_Interview_Complainant_Redacted_KM.wav'
+            time.sleep(throttle)
+            downloaded_assets.append(self.cache.download(str(download_path), url))
+        return downloaded_assets
 
     # Helper functions
-    def _download_index_pages(self, throttle, page_count, current_page, index_pages=[]):
+    def _get_asset_links(self) -> Path:
+        """Extract link to files and videos from child pages."""
+        metadata = []
+        # Process child page HTML files in index page folders,
+        # building a list of file metadata (name, url, etc.) along the way
+        for item in Path(self.cache_dir, self.agency_slug).iterdir():
+            if item.is_dir() and item.name.startswith("sb16"):
+                for html_file in item.iterdir():
+                    if html_file.suffix == ".html":
+                        html = self.cache.read(html_file)
+                        soup = BeautifulSoup(html, "html.parser")
+                        title = soup.find("div", "view-header").text.strip()  # type: ignore
+                        links = soup.find("div", class_="view-content").find_all("a")  # type: ignore
+                        # Save links to files, videos, etc with relevant metadata
+                        # for downstream processing
+                        for link in links:
+                            payload = {
+                                "title": title,
+                                "parent_page": str(html_file),
+                                "asset_url": link["href"].replace("\n", ""),
+                                "name": link.text.strip().replace("\n", ""),
+                            }
+                            metadata.append(payload)
+        # Store the metadata in a JSON file in the data directory
+        outfile = self.data_dir.joinpath(f"{self.agency_slug}.json")
+        self.cache.write_json(outfile, metadata)
+        # Return path to metadata file for downstream use
+        return outfile
+
+    def _get_child_page(self, index_page: Path, throttle: int = 0) -> List[dict]:
+        """Get URLs for child pages from index pages."""
+        html = self.cache.read(index_page)
+        soup = BeautifulSoup(html, "html.parser")
+        # Get all the child page URLs
+        parent_div = soup.find("div", class_="view-content")
+        links = parent_div.find_all("a")  # type: ignore
+        child_pages = []
+        for anchor in links:
+            time.sleep(throttle)
+            page_meta = {
+                "source_index_page": index_page,  # index page where this child page was found
+                "source_name": anchor.text.strip(),
+                "url": urllib.parse.urljoin(self.base_url, anchor.attrs["href"]),
+            }
+            page_meta["cache_name"] = (
+                f"{page_meta['source_name'].replace(' ', '_')}.html"
+            )
+            page_meta.update(
+                urllib.parse.parse_qs(urllib.parse.urlparse(page_meta["url"]).query)
+            )
+            # Stash child pages in folder matching name of index page where it's listed
+            # Construct index page directory
+            index_page_dir = f"{self.agency_slug}/{index_page.stem}"
+            # Construct local file path inside index page directory
+            relative_path = f"{index_page_dir}/{page_meta['cache_name']}"
+            # Download the child page
+            cache_path = self.cache.download(relative_path, page_meta["url"], "utf-8")
+            # Update page metadata with full path in cache and relative path
+            page_meta.update(
+                {
+                    "cache_path": cache_path,
+                    "relative_path": relative_path,
+                }
+            )
+            child_pages.append(page_meta)
+        return child_pages
+
+    def _get_index_page_urls(self, first_index_page: Path) -> List[str]:
+        """Get the URLs for all index pages."""
+        # Read the cached HTML file for home page
+        html = self.cache.read(first_index_page)
+        soup = BeautifulSoup(html, "html.parser")
+        # Gross, but necessary to pass mypy type checking
+        last_page = (
+            soup.find("li", class_="pager__item pager__item--last")  # type: ignore
+            .a.attrs["href"]  # type: ignore
+            .split("?page=")[-1]  # type: ignore
+        )  # type: ignore
+        # Construct page links
+        index_page_urls = []
+        for num in range(1, int(last_page) + 1):  # type: ignore
+            index_page_urls.append(f"{self.disclosure_url}?page={num}")
+        return index_page_urls
+
+    def _download_index_page(self, url: str) -> Path:
         """Download index pages for SB16/SB1421/AB748.
 
         Index pages link to child pages containing videos and
         other files related to use-of-force and disciplinary incidents.
 
         Returns:
-            List of path to cached index pages
+            Local path of downloaded file
         """
-        # Pause between requests
-        time.sleep(throttle)
-        file_stem = self.base_url.split("/")[-1]
-        base_file = f"{self.cache_suffix}/{file_stem}_index_page{current_page}.html"
-        # Construct URL: pages, including start page, have a page GET parameter
-        target_url = f"{self.base_url}?page={current_page}"
+        file_stem = url.split("/")[-1]
+        base_file = f"{self.agency_slug}/{file_stem}.html"
         # Download the page (if it's not already cached)
-        cache_path = self.cache.download(base_file, target_url, "utf-8")
-        # Add the path to the list of index pages
-        index_pages.append(cache_path)
-        # If there's no page_count, we're on first page, so...
-        if not page_count:
-            # Extract page count from the initial page
-            html = self.cache.read(base_file)
-            soup = BeautifulSoup(html, "html.parser")
-            page_count = int(
-                soup.find_all("li", class_="pager__item")[-1]  # last <li> in the pager
-                .a.attrs["href"]  # the <a> tag inside the <li>  # will be ?page=X
-                .split("=")[-1]  # get the X
-            )
-        if current_page != page_count:
-            # Recursively call this function to get the next page
-            next_page = current_page + 1
-            self._download_index_pages(throttle, page_count, next_page, index_pages)
-        return index_pages
-
-
-"""
-# LEGACY CODE BELOW #
-def _scrape_list_page(cache, top_level_urls, base_url, throttle):
-    second_level_urls = {}
-    for top_url in top_level_urls:
-        page = requests.get(top_url)
-        time.sleep(throttle)
-        soup = BeautifulSoup(page.text, "html.parser")
-        six_columns = soup.find_all("div", class_="six columns")
-        for elem in six_columns:
-            paragraph_with_link = elem.find("p")
-            if paragraph_with_link is None:
-                continue
-            else:
-                text = paragraph_with_link.text
-                elem_a = paragraph_with_link.find("a")
-                if elem_a is None:
-                    continue
-                else:
-                    full_link = base_url + elem_a["href"]
-                    second_level_urls[full_link] = text
-    _download_case_files(base_url, second_level_urls)
-    return second_level_urls
-
-
-def _download_case_files(base_url, second_level_urls):
-    all_case_content_links = []
-    for url in second_level_urls.keys():
-        page = requests.get(url)
-        time.sleep(0.5)
-        soup = BeautifulSoup(page.text, "html.parser")
-        content = soup.find_all("div", class_="odd")  # don't forget to add even...
-        for item in content:
-            text = item.text
-            paragraph = item.find("p")
-            print(paragraph.a["href"])
-            all_case_content_links.append(text)
-            print("_______________________")
-    return
-"""
+        cache_path = self.cache.download(base_file, url, "utf-8")
+        return cache_path
