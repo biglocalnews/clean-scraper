@@ -94,19 +94,16 @@ class Site:
         metadata = []
         file_stem = self.disclosure_url.split("/")[-1]
         # (old) html_location = f"{self.agency_slug}/{file_stem}_index_page{current_page}.html"
-        html_location = self.cache.read(
-            f"{self.agency_slug}/{file_stem}.html"
-        )
-        with open(html_location) as hl:
-            soup = BeautifulSoup(hl, "html.parser")
+        html_location = f"{self.agency_slug}/{file_stem}.html"
+        html = self.cache.read(html_location)
+        soup = BeautifulSoup(html, "html.parser")
         title = soup.find("title").text.strip()
         links = soup.article.find_all("a")
         urls = []
         name = []
         for link in links:
-            for link in links:
-                if "http" in link["href"]:
-                    urls.append(link["href"])
+            if "http" in link["href"]:
+                urls.append(link["href"])
         for url in urls:
             url_to_name = url.split("Mediazip/")[-1]
             url_to_name1 = url_to_name.replace("/", "_")
@@ -121,7 +118,7 @@ class Site:
         for key, value in url_dict.items():
             payload = {
                 "title": title,
-                "parent_page": str(html_location),
+                "parent_page": html_location,
                 "asset_url": value,
                 "name": key,
             }
