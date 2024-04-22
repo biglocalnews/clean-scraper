@@ -18,7 +18,11 @@ class Site:
 
     name = "Orange County Sheriffs Department"
 
-    def __init__(self, data_dir=utils.CLEAN_DATA_DIR, cache_dir=utils.CLEAN_CACHE_DIR):
+    def __init__(
+            self,
+            data_dir=utils.CLEAN_DATA_DIR,
+            cache_dir=utils.CLEAN_CACHE_DIR
+        ):
         """Initialize a new instance.
 
         Args:
@@ -28,8 +32,9 @@ class Site:
         # Start page contains list of "detail"/child pages with links to the SB16/SB1421/AB748 videos and files
         # along with additional index pages
         self.base_url = (
-            "https://www.ocsheriff.gov/about-ocsheriff/peace-officer-records-releases"
+            "https://www.ocsheriff.gov"
         )
+        self.disclosure_url = f"{self.base_url}/about-ocsheriff/peace-officer-records-releases"
         self.data_dir = data_dir
         self.cache_dir = cache_dir
         self.cache = Cache(cache_dir)
@@ -43,24 +48,23 @@ class Site:
         # to create a subdir inside the main cache directory to stash files for this agency
         return f"{state_postal}_{mod.stem}"  # ca_orange_county_sheriff
 
-    def scrape_meta(self, throttle=0):
+    def scrape_meta(self, throttle: int = 0) -> Path:
         """Gather metadata on downloadable files (videos, etc.)."""
-        current_page = 0
-        index_pages = self._download_index_pages(throttle, current_page)
+        self._download_index_pages(self.disclosure_url)
         # TODO: Get the child pages and, you know, actually scrape file metadata
-        downloadable_files = self._create_json(current_page)
+        downloadable_files = self._create_json()
         return downloadable_files
 
     # def scrape(self, metadata_csv):
 
     # Helper functions
 
-    def _create_json(self, current_page) -> Path:
+    def _create_json(self) -> Path:
         metadata = []
-        file_stem = self.base_url.split("/")[-1]
-        # html_location = f"{self.agency_slug}/{file_stem}_index_page{current_page}.html"
+        file_stem = self.disclosure_url.split("/")[-1]
+        # (old) html_location = f"{self.agency_slug}/{file_stem}_index_page{current_page}.html"
         html_location = self.cache.read(
-            f"{self.agency_slug}/{file_stem}_index_page{current_page}.html"
+            f"{self.agency_slug}/{file_stem}.html"
         )
         with open(html_location) as hl:
             soup = BeautifulSoup(hl, "html.parser")
@@ -97,8 +101,8 @@ class Site:
         # Return path to metadata file for downstream use
         return outfile
 
-    def _download_index_pages(self, throttle, current_page, index_pages=[]):
-        """Download index pages for SB16/SB1421/AB748.
+    def _download_index_pages(self, url: str) -> Path:
+        """Download index pages.
 
         Index pages link to child pages containing videos and
         other files related to use-of-force and disciplinary incidents.
@@ -106,17 +110,12 @@ class Site:
         Returns:
             List of path to cached index pages
         """
-        # Pause between requests
-        time.sleep(throttle)
-        file_stem = self.base_url.split("/")[-1]
-        base_file = f"{self.agency_slug}/{file_stem}_index_page{current_page}.html"
-        # Construct URL: pages, including start page, have a page GET parameter
-        target_url = f"{self.base_url}?page={current_page}"
+        file_stem = url.split("/")[-1]
+        base_file = f"{self.agency_slug}/{file_stem}.html"
         # Download the page (if it's not already cached)
-        cache_path = self.cache.download(base_file, target_url, "utf-8")
+        cache_path = self.cache.download(base_file, url, "utf-8")
         # Add the path to the list of index pages
-        index_pages.append(cache_path)
-        return index_pages
+        return cache_path
 
 
 """
