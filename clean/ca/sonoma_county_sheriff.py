@@ -47,8 +47,11 @@ class Site:
         metadata=[]
         html = self.cache.read(filename)
         soup = BeautifulSoup(html, "html.parser")
-        # dpbx = soup.findAll('li')
-        print(soup)
+        linkz = soup.find_all('li')
+        lenny = len(linkz)
+        print(lenny)
+        
+        
 
         
 
