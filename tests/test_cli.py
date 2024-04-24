@@ -10,9 +10,17 @@ from clean.cli import cli
 def mock_runner():
     with patch("clean.cli.Runner") as MockRunner:
         mock_runner = MockRunner.return_value
+        mock_runner.scrape_meta.return_value = "Invoked scrape_meta"
         mock_runner.scrape.return_value = "Invoked scrape"
-        mock_runner.scrape_meta.return_value = "Invoked scrape"
         yield mock_runner
+
+
+@pytest.mark.usefixtures("set_default_env", "create_scraper_dir")
+def test_cli_list():
+    """Test the `list' command."""
+    runner = CliRunner()
+    result = runner.invoke(cli, ["list"])
+    assert "ca_san_diego_pd" in result.stdout
 
 
 @pytest.mark.usefixtures("set_default_env", "create_scraper_dir")
