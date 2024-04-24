@@ -8,6 +8,12 @@ For example, `ca_san_diego_pd` is the slug for the San Diego Police Department i
 
 Metadata about available videos and other files, along with the downloads themselves, are written to a hidden directory in the user's home directory by default. On Apple and Linux systems, this will be `~/.clean-scraper`.
 
+## Install
+
+```bash
+pip install git+https://github.com/biglocalnews/clean-scraper.git
+```
+
 ## Find the agency slug
 
 To run a scraper, you must first know its agency "slug" (a state postal code + short agency name):
