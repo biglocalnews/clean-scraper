@@ -18,11 +18,7 @@ class Site:
 
     name = "Orange County Sheriffs Department"
 
-    def __init__(
-            self,
-            data_dir=utils.CLEAN_DATA_DIR,
-            cache_dir=utils.CLEAN_CACHE_DIR
-        ):
+    def __init__(self, data_dir=utils.CLEAN_DATA_DIR, cache_dir=utils.CLEAN_CACHE_DIR):
         """Initialize a new instance.
 
         Args:
@@ -31,10 +27,10 @@ class Site:
         """
         # Start page contains list of "detail"/child pages with links to the SB16/SB1421/AB748 videos and files
         # along with additional index pages
-        self.base_url = (
-            "https://www.ocsheriff.gov"
+        self.base_url = "https://www.ocsheriff.gov"
+        self.disclosure_url = (
+            f"{self.base_url}/about-ocsheriff/peace-officer-records-releases"
         )
-        self.disclosure_url = f"{self.base_url}/about-ocsheriff/peace-officer-records-releases"
         self.data_dir = data_dir
         self.cache_dir = cache_dir
         self.cache = Cache(cache_dir)
@@ -65,7 +61,7 @@ class Site:
         Returns:
             List[Path]: List of local paths to downloaded files
         """
-         # Get metadata on downloadable files
+        # Get metadata on downloadable files
         metadata = self.cache.read_json(
             self.data_dir.joinpath(f"{self.agency_slug}.json")
         )
@@ -86,8 +82,7 @@ class Site:
             time.sleep(throttle)
             downloaded_assets.append(self.cache.download(str(download_path), url))
         return downloaded_assets
-    
-    
+
     # Helper functions
 
     def _create_json(self) -> Path:
