@@ -147,7 +147,7 @@ def get_all_scrapers():
     for state_folder in state_folders:
         state = state_folder.stem
         for mod_path in state_folder.iterdir():
-            if not mod_path.stem.startswith("__init"):
+            if not mod_path.stem.startswith("__"):
                 agency_mod = importlib.import_module(f"clean.{state}.{mod_path.stem}")
                 scrapers.setdefault(state, []).append(
                     {"slug": f"{state}_{mod_path.stem}", "agency": agency_mod.Site.name}
