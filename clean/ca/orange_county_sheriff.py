@@ -1,5 +1,4 @@
 import time
-import urllib.parse
 from pathlib import Path
 from typing import List
 
