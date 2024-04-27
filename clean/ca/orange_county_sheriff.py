@@ -102,13 +102,14 @@ class Site:
         for url in urls:
             url_to_name = url.split("Mediazip/")[-1]
             url_to_name1 = url_to_name.replace("/", "_")
-            url_to_name2 = url_to_name1.replace(".zip", "")
-            url_to_name3 = url_to_name2.replace(
-                f"{url_to_name2}", f"Orange_County_Sheriffs_Department_{url_to_name2}"
+            url_to_name2 = url_to_name1.replace(
+                f"{url_to_name1}", f"Orange_County_Sheriffs_Department_{url_to_name1}"
             )
-            url_to_name4 = url_to_name3.replace("%20", "_")
-            url_to_name5 = url_to_name4.strip()
-            name.append(url_to_name5)
+            url_to_name3 = url_to_name2.replace("%20", "_")
+            url_to_name4 = url_to_name3.strip()
+            url_to_name5 = url_to_name4.replace(".", "_")
+            url_to_name6 = url_to_name5.replace("_zip", ".zip")
+            name.append(url_to_name6)
         url_dict = {name[i]: urls[i] for i in range(len(urls))}
         for key, value in url_dict.items():
             payload = {
