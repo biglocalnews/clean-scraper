@@ -47,93 +47,38 @@ class Site:
         metadata=[]
         html = self.cache.read(filename)
         soup = BeautifulSoup(html, "html.parser")
-        linkz = soup.find_all('li')
-        lenny = len(linkz)
-        print(lenny)
-        
-        
-
-        
-
-
-
-#         """Gather metadata on downloadable files (videos, etc.)."""
-#     def _download_index_pages(self, throttle, page_count, current_page, index_pages=[]):
-#         """Download index pages for SB16/SB1421/AB748.
-
-#         Index pages link to child pages containing videos and
-#         other files related to use-of-force and disciplinary incidents.
-
-#         Returns:
-#             List of path to cached index pages
-#         """
-#         # # Pause between requests
-#         # time.sleep(throttle)
-#         # file_stem = self.base_url.split("/")[-1]
-#         # base_file = f"{self.cache_suffix}/{file_stem}_index_page{current_page}.html"
-#         # # Construct URL: pages, including start page, have a page GET parameter
-#         # target_url = f"{self.base_url}?page={current_page}"
-#         # # Download the page (if it's not already cached)
-#         # cache_path = self.cache.download(base_file, target_url, "utf-8")
-#         # # Add the path to the list of index pages
-#         # index_pages.append(cache_path)
-#         # # If there's no page_count, we're on first page, so...
-#         # if not page_count:
-#         #     # Extract page count from the initial page
-#         #     html = self.cache.read(base_file)
-#         #     soup = BeautifulSoup(html, "html.parser")
-#         #     page_count = int(
-#         #         soup.find_all("li", class_="pager__item")[-1]  # last <li> in the pager
-#         #         .a.attrs["href"]  # the <a> tag inside the <li>  # will be ?page=X
-#         #         .split("=")[-1]  # get the X
-#         #     )
-#         # if current_page != page_count:
-#         #     # Recursively call this function to get the next page
-#         #     next_page = current_page + 1
-#         #     self._download_index_pages(throttle, page_count, next_page, index_pages)
-#         # return index_pages
+        body = soup.find("div", class_='main-content')
+        links = body.find_all("a")
+        link = links[4]
+        print()
+        for link in links:
+            if link.strong:
+                payload = {
+                    "year": link.find_parent("ul").find_previous_sibling("p").strong.string.replace(":",""),
+                    "parent_page": str(self.base_url),
+                    "asset_url": link['href'].replace("dl=0","dl=1"),
+                    "name": link.strong.string
+                }
+                metadata.append(payload)
+        print(metadata)
+        outfile = self.data_dir.joinpath(f"{self.agency_slug}.json")
+        self.cache.write_json(outfile, metadata)
+        return outfile
     
+    def scrape(self, throttle: int = 4, filter: str="") -> List[Path]:
+        metadata = self.cache.read_json(
+            self.data_dir.joinpath(f"{self.agency_slug}.json")
+        )
+        dl_assets = []
+        for asset in metadata:
+            url = asset["asset_url"]
+            index_dir = asset["parent_page"].split(f"{self.agency_slug}/")[-1]
+            asset_name = asset["name"]
+            dl_path = Path(self.agency_slug, "assets", index_dir, asset_name)
+            time.sleep(throttle)
+            dl_assets.append(self.cache.download(str(dl_path), url))
+        return dl_assets
+
+        
 
 
-
-
-# """
-# # LEGACY CODE BELOW #
-# def _scrape_list_page(cache, top_level_urls, base_url, throttle):
-#     second_level_urls = {}
-#     for top_url in top_level_urls:
-#         page = requests.get(top_url)
-#         time.sleep(throttle)
-#         soup = BeautifulSoup(page.text, "html.parser")
-#         six_columns = soup.find_all("div", class_="six columns")
-#         for elem in six_columns:
-#             paragraph_with_link = elem.find("p")
-#             if paragraph_with_link is None:
-#                 continue
-#             else:
-#                 text = paragraph_with_link.text
-#                 elem_a = paragraph_with_link.find("a")
-#                 if elem_a is None:
-#                     continue
-#                 else:
-#                     full_link = base_url + elem_a["href"]
-#                     second_level_urls[full_link] = text
-#     _download_case_files(base_url, second_level_urls)
-#     return second_level_urls
-
-
-# def _download_case_files(base_url, second_level_urls):
-#     all_case_content_links = []
-#     for url in second_level_urls.keys():
-#         page = requests.get(url)
-#         time.sleep(0.5)
-#         soup = BeautifulSoup(page.text, "html.parser")
-#         content = soup.find_all("div", class_="odd")  # don't forget to add even...
-#         for item in content:
-#             text = item.text
-#             paragraph = item.find("p")
-#             print(paragraph.a["href"])
-#             all_case_content_links.append(text)
-#             print("_______________________")
-#     return
-# """
