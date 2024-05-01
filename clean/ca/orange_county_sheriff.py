@@ -1,9 +1,12 @@
 import time
 from pathlib import Path
 from typing import List
+
 from bs4 import BeautifulSoup
+
 from .. import utils
 from ..cache import Cache
+
 
 class Site:
     name = "Orange County Sheriffs Department"
@@ -52,9 +55,9 @@ class Site:
         file_stem = self.disclosure_url.split("/")[-1]
         html_location = f"{self.agency_slug}/{file_stem}.html"
         html = self.cache.read(html_location)
-        soup = BeautifulSoup(html, "html.parser")
-        title = soup.find("title").text.strip()
-        links = soup.article.find_all("a")
+        soup = BeautifulSoup(html, "html.parser")  # type: ignore
+        title = soup.find("title").text.strip()  # type: ignore
+        links = soup.article.find_all("a")  # type: ignore
         urls = []
         name = []
         for link in links:
