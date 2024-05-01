@@ -2,6 +2,7 @@ import time
 from pathlib import Path
 
 from bs4 import BeautifulSoup
+from typing import List
 
 from .. import utils
 from ..cache import Cache
@@ -72,9 +73,10 @@ class Site:
         dl_assets = []
         for asset in metadata:
             url = asset["asset_url"]
-            index_dir = asset["parent_page"].split(f"{self.agency_slug}/")[-1]
             asset_name = asset["name"]
-            dl_path = Path(self.agency_slug, "assets", index_dir, asset_name)
+            outfile = url.split('/')[-1].replace('?dl=1', '.zip')
+            dl_path = Path(self.agency_slug, "assets", outfile)
+            breakpoint()
             time.sleep(throttle)
             dl_assets.append(self.cache.download(str(dl_path), url))
         return dl_assets
