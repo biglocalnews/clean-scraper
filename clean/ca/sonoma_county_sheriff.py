@@ -48,10 +48,9 @@ class Site:
         metadata=[]
         html = self.cache.read(filename)
         soup = BeautifulSoup(html, "html.parser")
+        # TODO: Check with Katey Rusch about whether we need to harvest YouTube briefing links
         body = soup.find("div", class_='main-content')
         links = body.find_all("a")
-        link = links[4]
-        print()
         for link in links:
             if link.strong:
                 payload = {
@@ -73,14 +72,18 @@ class Site:
         dl_assets = []
         for asset in metadata:
             url = asset["asset_url"]
-            asset_name = asset["name"]
-            outfile = url.split('/')[-1].replace('?dl=1', '.zip')
-            dl_path = Path(self.agency_slug, "assets", outfile)
-            breakpoint()
+            dl_path = self._make_download_path(asset)
             time.sleep(throttle)
+            breakpoint()
             dl_assets.append(self.cache.download(str(dl_path), url))
         return dl_assets
 
-        
-
-
+    def _make_download_path(self, asset):
+        # TODO: Update the logic to gracefully handle PDFs in addition to zip fiiles
+        url = asset['asset_url']
+        asset_name = asset["name"]
+        # If name ends in `pdf?dl=1`, handle one way
+        # if name ends in plain old `?dl=1`, assume it's a zip?
+        outfile = url.split('/')[-1].replace('?dl=1', '.zip')
+        dl_path = Path(self.agency_slug, "assets", outfile)
+        return dl_path
