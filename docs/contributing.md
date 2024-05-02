@@ -147,13 +147,13 @@ See below section on *Caching files* for more guidelines on implementing the scr
 
 ### Caching files
 
-#### Metadata 
+#### Metadata
 
 The `Site.scrape_meta` method should:
 
 - generate a single JSON file using.
 - use the agency slug in its name.
-- contain metadata about the files available for download. 
+- contain metadata about the files available for download.
 
 > This file is intended for use by downstream processes such as `Site.scrape` to download files.
 
@@ -188,21 +188,21 @@ Below is an example from `ca_san_deigo_pd.json` metadata JSON.
 
 #### Assets
 
-The `clean.cache.Cache.download` method is available to help simplify the process of downloading file "assets" -- e.g. police videos and the HTML of pages where those video links are found -- to a local cache directory. 
+The `clean.cache.Cache.download` method is available to help simplify the process of downloading file "assets" -- e.g. police videos and the HTML of pages where those video links are found -- to a local cache directory.
 
 Generally speaking, all cache files should be stored in a folder specific to a single agency within the cache directory: `~/.clean-scraper/cache/<agency_slug>`.
 
 For example, San Diego PD files are downloaded to `~/.clean-scraper/cache/ca_san_diego_pd`.
 
-It's important to not only download the target videos and related police files, but to store a copy of the web pages where those links are found. 
+It's important to not only download the target videos and related police files, but to store a copy of the web pages where those links are found.
 
-Generally, police videos and other file "assets" we're targeting should be saved to `~/.clean-scraper/cache/<agency_slug>/assets` folder. 
+Generally, police videos and other file "assets" we're targeting should be saved to `~/.clean-scraper/cache/<agency_slug>/assets` folder.
 
-Aside from that requirement, you can choose how simple/complex a file storage system is required for a given site. 
+Aside from that requirement, you can choose how simple/complex a file storage system is required for a given site.
 
-An agency that posts all videos on a single HTML page might be quite simple, whereas others with a top-level page linking to child pages for individual cases might be more complex. San Diego PD is an example of the latter type of site. 
+An agency that posts all videos on a single HTML page might be quite simple, whereas others with a top-level page linking to child pages for individual cases might be more complex. San Diego PD is an example of the latter type of site.
 
-Below is an example of the folder structure we used to organize HTML pages and file downloads. This is more art than science, so you don't have to mirror this approach. 
+Below is an example of the folder structure we used to organize HTML pages and file downloads. This is more art than science, so you don't have to mirror this approach.
 
 **But please use a sensible strategy. If in doubt, ping the maintainers to discuss.**
 
