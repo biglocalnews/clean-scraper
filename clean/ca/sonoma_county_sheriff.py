@@ -73,17 +73,19 @@ class Site:
         for asset in metadata:
             url = asset["asset_url"]
             dl_path = self._make_download_path(asset)
+            print(f"Downloading {url}, {dl_path}")
             time.sleep(throttle)
-            breakpoint()
+            # breakpoint()
             dl_assets.append(self.cache.download(str(dl_path), url))
         return dl_assets
 
     def _make_download_path(self, asset):
         # TODO: Update the logic to gracefully handle PDFs in addition to zip fiiles
         url = asset['asset_url']
-        asset_name = asset["name"]
+        asset_name = asset['name']
         # If name ends in `pdf?dl=1`, handle one way
-        # if name ends in plain old `?dl=1`, assume it's a zip?
-        outfile = url.split('/')[-1].replace('?dl=1', '.zip')
+        if url.find('pdf?dl=1')== -1:
+            outfile = url.split('/')[-1].replace('?dl=1', '.zip')
+        else: outfile = url.split('/')[-1].replace('?dl=1', '')
         dl_path = Path(self.agency_slug, "assets", outfile)
         return dl_path
