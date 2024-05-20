@@ -35,6 +35,7 @@ click = "*"
 retry = "*"
 urllib3 = "1.26.18" # pegged to avoid test issue
 typing-extensions = "*"
+us = "*"
 
 [pipenv]
 allow_prereleases = false
