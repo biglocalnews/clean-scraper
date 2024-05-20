@@ -1,8 +1,8 @@
 import time
 from pathlib import Path
+from typing import List
 
 from bs4 import BeautifulSoup
-from typing import List
 
 from .. import utils
 from ..cache import Cache
@@ -38,34 +38,34 @@ class Site:
         self.cache_suffix = f"{state_postal}_{mod.stem}"  # ca_sonoma_county_sheriff
 
     def scrape_meta(self, throttle=0):
-        
         # construct a local filename relative to the cache directory - agency slug + page url (ca/sonoma__/release_page.html)
         # download the page (if not already cached)
         # save the index page url to cache (sensible name)
         base_name = f"{self.base_url.split('/')[-1]}.html"
-        filename = f'{self.agency_slug}/{base_name}'
-        cache_path = self.cache.download(filename, self.base_url), "utf-8"
-        metadata=[]
+        filename = f"{self.agency_slug}/{base_name}"
+        self.cache.download(filename, self.base_url)
+        metadata = []
         html = self.cache.read(filename)
         soup = BeautifulSoup(html, "html.parser")
-        # TODO: Check with Katey Rusch about whether we need to harvest YouTube briefing links
-        body = soup.find("div", class_='main-content')
+        body = soup.find("div", class_="main-content")
         links = body.find_all("a")
         for link in links:
             if link.strong:
                 payload = {
-                    "year": link.find_parent("ul").find_previous_sibling("p").strong.string.replace(":",""),
+                    "year": link.find_parent("ul")
+                    .find_previous_sibling("p")
+                    .strong.string.replace(":", ""),
                     "parent_page": str(self.base_url),
-                    "asset_url": link['href'].replace("dl=0","dl=1"),
-                    "name": link.strong.string
+                    "asset_url": link["href"].replace("dl=0", "dl=1"),
+                    "name": link.strong.string,
                 }
                 metadata.append(payload)
         print(metadata)
         outfile = self.data_dir.joinpath(f"{self.agency_slug}.json")
         self.cache.write_json(outfile, metadata)
         return outfile
-    
-    def scrape(self, throttle: int = 4, filter: str="") -> List[Path]:
+
+    def scrape(self, throttle: int = 4, filter: str = "") -> List[Path]:
         metadata = self.cache.read_json(
             self.data_dir.joinpath(f"{self.agency_slug}.json")
         )
@@ -79,11 +79,11 @@ class Site:
 
     def _make_download_path(self, asset):
         # TODO: Update the logic to gracefully handle PDFs in addition to zip fiiles
-        url = asset['asset_url']
-        asset_name = asset['name']
+        url = asset["asset_url"]
         # If name ends in `pdf?dl=1`, handle one way
-        if url.find('pdf?dl=1')== -1:
-            outfile = url.split('/')[-1].replace('?dl=1', '.zip')
-        else: outfile = url.split('/')[-1].replace('?dl=1', '')
+        if url.find("pdf?dl=1") == -1:
+            outfile = url.split("/")[-1].replace("?dl=1", ".zip")
+        else:
+            outfile = url.split("/")[-1].replace("?dl=1", "")
         dl_path = Path(self.agency_slug, "assets", outfile)
         return dl_path
