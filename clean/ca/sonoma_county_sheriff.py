@@ -73,9 +73,7 @@ class Site:
         for asset in metadata:
             url = asset["asset_url"]
             dl_path = self._make_download_path(asset)
-            print(f"Downloading {url}, {dl_path}")
             time.sleep(throttle)
-            # breakpoint()
             dl_assets.append(self.cache.download(str(dl_path), url))
         return dl_assets
 
