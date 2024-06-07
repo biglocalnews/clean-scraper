@@ -25,11 +25,13 @@ CLEAN_CACHE_DIR = CLEAN_OUTPUT_DIR / "cache"
 CLEAN_DATA_DIR = CLEAN_OUTPUT_DIR / "exports"
 CLEAN_LOG_DIR = CLEAN_OUTPUT_DIR / "logs"
 
+
 class MetadataDict(TypedDict):
     asset_url: str
     name: str
     parent_page: str
     title: Optional[str]
+
 
 def create_directory(path: Path, is_file: bool = False):
     """Create the filesystem directories for the provided Path objects.
