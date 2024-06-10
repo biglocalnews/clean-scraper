@@ -6,7 +6,6 @@ You can also chat with us over on [GitHub Discussions](https://github.com/bigloc
 
 We want your help. We need your help. Here's how to get started.
 
-
 Adding features and fixing bugs is managed using GitHub's [pull request](https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/proposing-changes-to-your-work-with-pull-requests/about-pull-requests) system.
 
 The tutorial that follows assumes you have the [Python](https://www.python.org/) programming language, the [pipenv](https://pipenv.pypa.io/) package manager and the [git](https://git-scm.com/) version control system already installed. If you don't, you'll want to address that first.
@@ -133,14 +132,14 @@ class Site:
 
 When creating a scraper, there are a few rules of thumb.
 
-1.  The raw data being scraped --- whether it be HTML, video files, PDFs ---
+1. The raw data being scraped --- whether it be HTML, video files, PDFs ---
     should be saved to the cache unedited. We aim to store pristine
     versions of our source data.
-1.  The metadata about source files should be stored in a single
+2. The metadata about source files should be stored in a single
     JSON file. Any intermediate files generated during file/data processing should
     not be written to the data folder. Such files should be written to
     the cache directory.
-1.  Files should be cached in a site-specific cache folder using the agency slug name:  `ca_san_diego_pd`.
+3. Files should be cached in a site-specific cache folder using the agency slug name:  `ca_san_diego_pd`.
     If many files need to be cached, apply a sensible naming scheme to the cached files (e.g. `ca_san_diego_pd/index_page_1.html`)
 
 See below section on *Caching files* for more guidelines on implementing the scraper.
@@ -270,14 +269,14 @@ pipenv run python -m clean.cli scrape ca_san_diego_pd
 For more verbose logging, you can ask the system to show debugging information.
 
 ``` bash
-pipenv run python -m clean.cli -l DEBUG ca_san_diego_pd
+pipenv run python -m clean.cli ca_san_diego_pd -l DEBUG
 ```
 
 To be a good citizen of the Web and avoid IP blocking, you can throttle (i.e. slow down the scrapers with a time delay):
 
 ``` bash
 # Pause 2 seconds between web requests
-pipenv run python -m clean.cli -t 2 ca_san_diego_pd
+pipenv run python -m clean.cli ca_san_diego_pd -t 2
 ```
 
 You could continue to iterate with code edits and CLI runs until you've completed your goal.

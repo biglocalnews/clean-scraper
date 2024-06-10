@@ -4,6 +4,7 @@ import logging
 import os
 from pathlib import Path
 from time import sleep
+from typing import Optional, TypedDict
 
 import requests
 import us
@@ -23,6 +24,13 @@ CLEAN_OUTPUT_DIR = Path(os.environ.get("CLEAN_OUTPUT_DIR", CLEAN_DEFAULT_OUTPUT_
 CLEAN_CACHE_DIR = CLEAN_OUTPUT_DIR / "cache"
 CLEAN_DATA_DIR = CLEAN_OUTPUT_DIR / "exports"
 CLEAN_LOG_DIR = CLEAN_OUTPUT_DIR / "logs"
+
+
+class MetadataDict(TypedDict):
+    asset_url: str
+    name: str
+    parent_page: str
+    title: Optional[str]
 
 
 def create_directory(path: Path, is_file: bool = False):
