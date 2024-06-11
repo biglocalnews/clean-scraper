@@ -4,8 +4,7 @@ import logging
 import os
 from pathlib import Path
 from time import sleep
-from typing import Literal
-from typing import Optional, TypedDict
+from typing import Literal, Optional, TypedDict
 
 import requests
 import us
