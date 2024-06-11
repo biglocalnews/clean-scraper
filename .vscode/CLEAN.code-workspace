@@ -3,9 +3,11 @@
     {
       "path": "."
     },
-    {
-      // "path": "[absolute]/[path]/[to]/.clean-scraper"
-    }
+    // {
+    //   OPTIONAL: move this file up to the root of the workspace
+    //             then add multiple CLEAN repositories & dirs
+    //   "path": "[absolute]/[path]/[to]/.clean-scraper"
+    // }
   ],
   "settings": {
     "python.analysis.typeCheckingMode": "basic",
