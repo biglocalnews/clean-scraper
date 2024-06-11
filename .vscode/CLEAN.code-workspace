@@ -1,0 +1,22 @@
+{
+  "folders": [
+    {
+      "path": "."
+    },
+    {
+      // "path": "[absolute]/[path]/[to]/.clean-scraper"
+    }
+  ],
+  "settings": {
+    "python.analysis.typeCheckingMode": "basic",
+    "[python]": {
+      "editor.codeActionsOnSave": {
+        "source.organizeImports": "explicit"
+      },
+      "editor.defaultFormatter": "ms-python.black-formatter",
+      "editor.formatOnSave": true,
+      "editor.tabSize": 4
+    },
+    "isort.args":["--profile", "black"]
+  }
+}
