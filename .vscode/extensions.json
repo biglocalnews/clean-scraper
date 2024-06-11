@@ -1,4 +1,5 @@
 {
+  "_comment": "See .pre-commit-config.yaml for more related checks and configurations",
   "recommendations": [
     "ms-python.python",
     "ms-python.black-formatter",
