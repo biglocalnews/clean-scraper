@@ -7,7 +7,7 @@ from time import sleep
 from typing import Literal, Optional, TypedDict
 
 import requests
-import us
+import us  # type: ignore
 from retry import retry
 
 logger = logging.getLogger(__name__)

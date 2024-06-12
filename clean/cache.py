@@ -7,7 +7,7 @@ from os.path import expanduser, join
 from pathlib import Path
 from typing import Union
 
-from .utils import get_url
+from .utils import MetadataDict, get_url
 
 logger = logging.getLogger(__name__)
 
@@ -158,7 +158,9 @@ class Cache:
             fh.write(content)
         return str(out)
 
-    def write_json(self, name: Union[Path, str], files_meta: list[dict]) -> Path:
+    def write_json(
+        self, name: Union[Path, str], files_meta: list[MetadataDict]
+    ) -> Path:
         """Save JSON data to cache.
 
         Typically, this should be an agency-specific directory inside the cache folder.

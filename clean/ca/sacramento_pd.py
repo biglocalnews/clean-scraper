@@ -1,12 +1,12 @@
-# import time
+import time
 from pathlib import Path
+from typing import List
 
 from bs4 import BeautifulSoup
 
 from .. import utils
 from ..cache import Cache
-
-# from typing import List
+from ..utils import MetadataDict
 
 
 class Site:
@@ -53,25 +53,25 @@ class Site:
         downloadable_files = self._create_json()
         return downloadable_files
 
-    # def scrape(self, throttle: int = 0, filter: str = "") -> List[Path]:
-    #     # TODO: Reimplement & test
-    #     metadata = self.cache.read_json(
-    #         self.data_dir.joinpath(f"{self.agency_slug}.json")
-    #     )
-    #     downloaded_assets = []
-    #     for asset in metadata:
-    #         url = asset["asset_url"]
-    #         if filter and filter not in url:
-    #             continue
-    #         index_dir = (
-    #             asset["parent_page"].split(f"{self.agency_slug}/")[-1].rstrip(".html")
-    #         )
-    #         asset_name = asset["name"].replace(" ", "_")
-    #         download_path = Path(self.agency_slug, "assets", index_dir, asset_name)
-    #         time.sleep(throttle)
-    #         downloaded_assets.append(self.cache.download(str(download_path), url))
-    #     return downloaded_assets
-    #     pass
+    def scrape(self, throttle: int = 0, filter: str = "") -> List[Path]:
+        # TODO: Refactor out scrape method in favor of Prefect flows
+        metadata = self.cache.read_json(
+            self.data_dir.joinpath(f"{self.agency_slug}.json")
+        )
+        downloaded_assets = []
+        for asset in metadata:
+            url = asset["asset_url"]
+            if filter and filter not in url:
+                continue
+            index_dir = (
+                asset["parent_page"].split(f"{self.agency_slug}/")[-1].rstrip(".html")
+            )
+            asset_name = asset["name"].replace(" ", "_")
+            download_path = Path(self.agency_slug, "assets", index_dir, asset_name)
+            time.sleep(throttle)
+            downloaded_assets.append(self.cache.download(str(download_path), url))
+        return downloaded_assets
+        pass
 
     def _download_index_pages(self, url: str) -> Path:
         """Download index pages for SB16/SB1421/AB748.
@@ -87,15 +87,15 @@ class Site:
         return self.cache.download(base_file, url, "utf-8")
 
     def _create_json(self) -> Path:
-        metadata = []
+        links = []
         file_stem = self.disclosure_url.split("/")[-1]
         html_location = f"{self.agency_slug}/{file_stem}.html"
         html = self.cache.read(html_location)
         soup = BeautifulSoup(html, "html.parser")
         lists = soup.select("#container-392a98e5b6 .paragraph li")
 
-        for url in _extract_index_urls(lists):
-            metadata.append(
+        for url in self._extract_index_urls(lists):
+            links.append(
                 {
                     "title": url["title"],
                     "parent_page": html_location,
@@ -104,33 +104,53 @@ class Site:
                 }
             )
 
+        metadata = self._extract_csi_photos(links)
         outfile = self.data_dir.joinpath(f"{self.agency_slug}.json")
         self.cache.write_json(outfile, metadata)
         return outfile
 
-
-# def _extract_csi_photos(link) -> List[dict]:
-#     # TODO
-#     """Given a Beautiful Soup link, download the page, extract links, and add to metadata."""
-#     pass
-
-
-def _clean_text(text: str) -> str:
-    return text.replace("\u00a0", " ").strip()
-
-
-def _extract_index_urls(lists):
-    for li in lists:
-        title = li.select_one("strong")
-        if title is None:
-            title = ""
-        else:
-            title = _clean_text(f"{title.get_text()} {title.next_sibling}")
-        links = li.find_all("a")
+    def _extract_csi_photos(self, links) -> List[MetadataDict]:
+        """Given a list of links, check for CSI images, extract links, and add to metadata."""
         for link in links:
-            if "http" in link["href"]:
-                yield {
-                    "title": title,
-                    "name": _clean_text(link.text),
-                    "href": link["href"],
-                }
+            if "csi" in link["name"].lower():
+                url = link["asset_url"]
+                file_stem = url.split("/")[-2]
+                base_file = f"{self.agency_slug}/{file_stem}.html"
+                cache_path = self.cache.download(base_file, url, "utf-8")
+                html = self.cache.read(cache_path)
+                soup = BeautifulSoup(html, "html.parser")
+                title_tag = soup.find("h1")
+                photo_links = soup.select(".col-filename a")
+                for photo in photo_links:
+                    links.append(
+                        MetadataDict(
+                            title=(
+                                title_tag.get_text().split("/")[-2]
+                                if title_tag
+                                else link["title"]
+                            ),
+                            parent_page=file_stem,
+                            asset_url=f'https://cityofsacramento.hosted-by-files.com{photo["href"]}',
+                            name=photo.get_text(),
+                        )
+                    )
+        return links
+
+    def _clean_text(self, text: str) -> str:
+        return text.replace("\u00a0", " ").strip()
+
+    def _extract_index_urls(self, lists):
+        for li in lists:
+            title = li.select_one("strong")
+            if title is None:
+                title = ""
+            else:
+                title = self._clean_text(f"{title.get_text()} {title.next_sibling}")
+            links = li.find_all("a")
+            for link in links:
+                if "http" in link["href"]:
+                    yield {
+                        "title": title,
+                        "name": self._clean_text(link.text),
+                        "href": link["href"],
+                    }
