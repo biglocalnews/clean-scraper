@@ -8,6 +8,10 @@ from .. import utils
 from ..cache import Cache
 from ..utils import MetadataDict
 
+BASE_URL = "https://www.cityofsacramento.gov"
+DISCLOSURE_PATH = "/police/police-transparency/release-of-police-officer-personnel-records--pc-832-7-b--"
+ASSET_URL = "https://cityofsacramento.hosted-by-files.com"
+
 
 class Site:
     """
@@ -27,8 +31,8 @@ class Site:
             data_dir (Path): The directory where downstream processed files/data will be saved
             cache_dir (Path): The directory where files will be cached
         """
-        self.base_url = "https://www.cityofsacramento.gov"
-        self.disclosure_url = f"{self.base_url}/police/police-transparency/release-of-police-officer-personnel-records--pc-832-7-b--"
+        self.base_url = BASE_URL
+        self.disclosure_url = f"{self.base_url}{DISCLOSURE_PATH}"
         self.data_dir = data_dir
         self.cache_dir = cache_dir
         self.cache = Cache(cache_dir)
@@ -50,7 +54,7 @@ class Site:
             Path: Local path of JSON file containing metadata on downloadable files
         """
         self._download_index_pages(self.disclosure_url)
-        downloadable_files = self._create_json()
+        downloadable_files = self._create_metadata_json()
         return downloadable_files
 
     def scrape(self, throttle: int = 0, filter: str = "") -> List[Path]:
@@ -71,7 +75,6 @@ class Site:
             time.sleep(throttle)
             downloaded_assets.append(self.cache.download(str(download_path), url))
         return downloaded_assets
-        pass
 
     def _download_index_pages(self, url: str) -> Path:
         """Download index pages for SB16/SB1421/AB748.
@@ -86,8 +89,8 @@ class Site:
         base_file = f"{self.agency_slug}/{file_stem}.html"
         return self.cache.download(base_file, url, "utf-8")
 
-    def _create_json(self) -> Path:
-        links = []
+    def _create_metadata_json(self) -> Path:
+        links: List[MetadataDict] = []
         file_stem = self.disclosure_url.split("/")[-1]
         html_location = f"{self.agency_slug}/{file_stem}.html"
         html = self.cache.read(html_location)
@@ -104,37 +107,60 @@ class Site:
                 }
             )
 
-        metadata = self._extract_csi_photos(links)
+        metadata = self._extract_child_links(links)
         outfile = self.data_dir.joinpath(f"{self.agency_slug}.json")
         self.cache.write_json(outfile, metadata)
         return outfile
 
-    def _extract_csi_photos(self, links) -> List[MetadataDict]:
+    def _extract_child_links(self, links: List[MetadataDict]) -> List[MetadataDict]:
         """Given a list of links, check for CSI images, extract links, and add to metadata."""
         for link in links:
             if "csi" in link["name"].lower():
                 url = link["asset_url"]
                 file_stem = url.split("/")[-2]
-                base_file = f"{self.agency_slug}/{file_stem}.html"
-                cache_path = self.cache.download(base_file, url, "utf-8")
-                html = self.cache.read(cache_path)
-                soup = BeautifulSoup(html, "html.parser")
-                title_tag = soup.find("h1")
-                photo_links = soup.select(".col-filename a")
-                for photo in photo_links:
-                    links.append(
-                        MetadataDict(
-                            title=(
-                                title_tag.get_text().split("/")[-2]
-                                if title_tag
-                                else link["title"]
-                            ),
-                            parent_page=file_stem,
-                            asset_url=f'https://cityofsacramento.hosted-by-files.com{photo["href"]}',
-                            name=photo.get_text(),
-                        )
-                    )
+                soup = self._download_and_parse(url, file_stem)
+                if soup:
+                    photo_links = self._extract_photos(soup, file_stem, link)
+                    links.extend(photo_links)
         return links
+
+    def _download_and_parse(self, url: str, file_stem: str) -> BeautifulSoup:
+        """Download and parse a URL, returning a BeautifulSoup object."""
+        base_file = f"{self.agency_slug}/{file_stem}.html"
+        cache_path = self.cache.download(base_file, url, "utf-8")
+        html = self.cache.read(cache_path)
+        return BeautifulSoup(html, "html.parser")
+
+    def _extract_photos(
+        self, soup: BeautifulSoup, file_stem: str, link: MetadataDict
+    ) -> List[MetadataDict]:
+        """Extract photo links from a BeautifulSoup object and return a list of MetadataDict."""
+        title_tag = soup.find("h1")
+        photo_links = soup.select(".col-filename a")
+        photos: List[MetadataDict] = []
+        for photo in photo_links:
+            if str(photo["href"]).endswith("/"):
+                child_url = f'{ASSET_URL}{photo["href"]}'
+                child_file_stem = child_url.split("/")[-2]
+                child_soup = self._download_and_parse(child_url, child_file_stem)
+                more_photos = self._extract_photos(child_soup, child_file_stem, link)
+                photos.extend(more_photos)
+
+            else:
+                photos.append(
+                    {
+                        "title": (
+                            title_tag.get_text().split("/")[-2]
+                            if title_tag
+                            else link["title"]
+                        ),
+                        "parent_page": file_stem,
+                        "asset_url": f'{ASSET_URL}{photo["href"]}',
+                        "name": photo.get_text(),
+                    }
+                )
+
+        return photos
 
     def _clean_text(self, text: str) -> str:
         return text.replace("\u00a0", " ").strip()
