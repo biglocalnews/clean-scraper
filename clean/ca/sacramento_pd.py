@@ -113,19 +113,20 @@ class Site:
         return outfile
 
     def _extract_child_links(self, links: List[MetadataDict]) -> List[MetadataDict]:
+        # TODO: Refactor to account for zip files in CSI label
         """Given a list of links, check for CSI images, extract links, and add to metadata."""
         for link in links:
             if "csi" in link["name"].lower():
                 url = link["asset_url"]
                 file_stem = url.split("/")[-2]
                 soup = self._download_and_parse(url, file_stem)
-                if soup:
-                    photo_links = self._extract_photos(soup, file_stem, link)
-                    links.extend(photo_links)
+                photo_links = self._extract_photos(soup, file_stem, link)
+                links.extend(photo_links)
         return links
 
     def _download_and_parse(self, url: str, file_stem: str) -> BeautifulSoup:
         """Download and parse a URL, returning a BeautifulSoup object."""
+        # TODO potentially include child subdirs
         base_file = f"{self.agency_slug}/{file_stem}.html"
         cache_path = self.cache.download(base_file, url, "utf-8")
         html = self.cache.read(cache_path)
