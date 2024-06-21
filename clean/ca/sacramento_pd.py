@@ -119,12 +119,12 @@ class Site:
             if "csi" in link["name"].lower():
                 url = link["asset_url"]
                 file_stem = url.split("/")[-2]
-                soup = self._download_and_parse(url, file_stem)
+                soup = self._download_and_soup(url, file_stem)
                 photo_links = self._extract_photos(soup, file_stem, link)
                 links.extend(photo_links)
         return links
 
-    def _download_and_parse(self, url: str, file_stem: str) -> BeautifulSoup:
+    def _download_and_soup(self, url: str, file_stem: str) -> BeautifulSoup:
         """Download and parse a URL, returning a BeautifulSoup object."""
         # TODO potentially include child subdirs
         base_file = f"{self.agency_slug}/{file_stem}.html"
@@ -143,7 +143,7 @@ class Site:
             if str(photo["href"]).endswith("/"):
                 child_url = f'{ASSET_URL}{photo["href"]}'
                 child_file_stem = child_url.split("/")[-2]
-                child_soup = self._download_and_parse(child_url, child_file_stem)
+                child_soup = self._download_and_soup(child_url, child_file_stem)
                 more_photos = self._extract_photos(child_soup, child_file_stem, link)
                 photos.extend(more_photos)
 

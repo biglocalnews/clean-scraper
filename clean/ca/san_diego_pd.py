@@ -7,6 +7,7 @@ from bs4 import BeautifulSoup
 
 from .. import utils
 from ..cache import Cache
+from ..utils import MetadataDict
 
 
 class Site:
@@ -119,7 +120,7 @@ class Site:
                         # Save links to files, videos, etc with relevant metadata
                         # for downstream processing
                         for link in links:
-                            payload = {
+                            payload: MetadataDict = {
                                 "title": title,
                                 "parent_page": str(html_file),
                                 "asset_url": link["href"].replace("\n", ""),
