@@ -1,9 +1,9 @@
 import copy
 import time
 from pathlib import Path
+from pprint import pprint
 from typing import List
 from urllib.parse import urlparse
-from pprint import pprint
 
 from bs4 import BeautifulSoup, ResultSet, Tag
 
@@ -93,7 +93,7 @@ class Site:
 
     def _create_metadata_json(self) -> Path:
         """
-        Creates a metadata JSON file containing information about the child links extracted from the HTML page.
+        Create a metadata JSON file containing information about the child links extracted from the HTML page.
 
         Returns:
             Path: The file path of the created metadata JSON file.
@@ -215,7 +215,7 @@ class Site:
 
     def _clean_text(self, text: str) -> str:
         """
-        Cleans the given text by replacing non-breaking spaces with regular spaces and removing leading/trailing whitespace.
+        Clean the given text by replacing non-breaking spaces with regular spaces and removing leading/trailing whitespace.
 
         Args:
             text (str): The text to be cleaned.
@@ -241,7 +241,7 @@ class Site:
 
     def _extract_index_urls(self, lists: ResultSet[Tag]):
         """
-        Extracts the index URLs from a list of tags, accounting for relative URLs.
+        Extract the index URLs from a list of tags, accounting for relative URLs.
 
         Args:
             lists (ResultSet[Tag]): A list of tags containing the index URLs.
@@ -274,7 +274,7 @@ class Site:
 
     def _contains_repeated_asset_url(self, objects: List[MetadataDict]):
         """
-        Checks if the given list of objects contains any repeated asset URLs.
+        Check if the given list of objects contains any repeated asset URLs and returns them.
 
         Args:
             objects (List[MetadataDict]): A list of objects, where each object is a dictionary containing metadata.
