@@ -1,7 +1,6 @@
 import copy
 import time
 from pathlib import Path
-from pprint import pprint
 from typing import List
 from urllib.parse import urlparse
 
@@ -104,7 +103,7 @@ class Site:
         html = self.cache.read(html_location)
         soup = BeautifulSoup(html, "html.parser")
         lists = soup.select("#container-392a98e5b6 .paragraph li")
-        print(f"retrieved {len(lists)} lists")
+
         for url in self._extract_index_urls(lists):
             links.append(
                 {
@@ -114,12 +113,10 @@ class Site:
                     "name": url["name"],
                 }
             )
-        print(f"extracted {len(links)} links from parent page")
 
         metadata = self._extract_child_links(links)
-        print(f"collected {len(metadata)} links total")
         outfile = self.data_dir.joinpath(f"{self.agency_slug}.json")
-        pprint(self._contains_repeated_asset_url(metadata))
+        self._test_repeated_asset_url(metadata)
         self.cache.write_json(outfile, metadata)
         return outfile
 
@@ -143,7 +140,6 @@ class Site:
                     file_stem = url_split[-1]
                     soup = self._download_and_parse(link["asset_url"], file_stem)
                     photo_links = self._extract_photos(soup, file_stem, link)
-                    print(f"\t extending links by {len(photo_links)}")
                     modified_links.extend(photo_links)
                 else:
                     modified_links.append(
@@ -272,7 +268,7 @@ class Site:
                     "href": href_str,
                 }
 
-    def _contains_repeated_asset_url(self, objects: List[MetadataDict]):
+    def _test_repeated_asset_url(self, objects: List[MetadataDict]):
         """
         Check if the given list of objects contains any repeated asset URLs and returns them.
 
