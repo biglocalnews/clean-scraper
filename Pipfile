@@ -24,6 +24,7 @@ types-beautifulsoup4 = "*"
 types-openpyxl = "*"
 blacken-docs = "*"
 exceptiongroup = "*"
+tomli = "*"
 
 [packages]
 beautifulsoup4 = "*"

@@ -4,7 +4,7 @@ import logging
 import os
 from pathlib import Path
 from time import sleep
-from typing import Optional, TypedDict
+from typing import Literal, Optional, TypedDict
 
 import requests
 import us
@@ -117,7 +117,13 @@ def write_rows_to_csv(output_path: Path, rows: list, mode="w"):
         writer.writerows(rows)
 
 
-def write_dict_rows_to_csv(output_path, headers, rows, mode="w", extrasaction="raise"):
+def write_dict_rows_to_csv(
+    output_path,
+    headers,
+    rows,
+    mode="w",
+    extrasaction: Literal["raise", "ignore"] = "raise",
+):
     """Write the provided dictionary to the provided path as comma-separated values.
 
     Args:
