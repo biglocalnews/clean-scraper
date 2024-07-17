@@ -1,6 +1,9 @@
 name: Testing and distribution
 on:
   push:
+    branches:
+      - dev
+      - main
   pull_request:
   workflow_dispatch:
 
@@ -17,12 +20,11 @@ jobs:
         name: Setup Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.9'
+          python-version: "3.9"
 
       - id: pre-commit
         name: Pre-commit
         uses: pre-commit/action@v3.0.1
-
 #  test-python:
 #    strategy:
 #      matrix:
