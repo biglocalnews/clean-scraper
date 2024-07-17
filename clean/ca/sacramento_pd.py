@@ -56,8 +56,8 @@ class Site:
             Path: Local path of JSON file containing metadata on downloadable files
         """
         self._download_index_pages(self.disclosure_url)
-        downloadable_files = self._create_metadata_json()
-        return downloadable_files
+        metadata_filepath = self._create_metadata_json()
+        return metadata_filepath
 
     def scrape(self, throttle: int = 0, filter: str = "") -> List[Path]:
         metadata = self.cache.read_json(
