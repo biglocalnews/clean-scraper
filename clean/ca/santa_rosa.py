@@ -1,5 +1,4 @@
 import time
-import urllib.parse
 from pathlib import Path
 from typing import List
 
@@ -43,7 +42,7 @@ class Site:
         return f"{state_postal}_{mod.stem}"  # ca_santa_rosa
 
     def scrape_meta(self, throttle=0):
-        # construct a local filename relative to the cache directory - agency slug + page url (ca/sonoma__/release_page.html)
+        # construct a local filename relative to the cache directory - agency slug + page url (ca_santa_rosa/3201.html)
         # download the page (if not already cached)
         # save the index page url to cache (sensible name)
         base_name = f"{self.base_url.split('/')[-2]}.html"
