@@ -94,7 +94,7 @@ You can use the code for San Diego as a reference example to jumpstart your own 
 
 When coding a new scraper, there are a few important conventions to follow:
 
-- Add the agency's scraper module to a state-based folder (e.g. `clean/ca/san_deigo_pd.py`)
+- Add the agency's scraper module to a state-based folder (e.g. `clean/ca/san_diego_pd.py`)
 - If it's a new state folder, add an empty `__init__.py` to the folder
 - Create a `Site` class inside the agency's scraper module with the following attributes/methods:
   - `name` - Official name of the agency
@@ -173,7 +173,7 @@ The metadata file should contain an array of one or more objects with the below 
 - `parent_page`: The local file path in cache to the HTML page containing the `asset_url`.
 - `title`: (optional) If available, this will typically be a human-friendly title for the file.
 
-Below is an example from `ca_san_deigo_pd.json` metadata JSON.
+Below is an example from `ca_san_diego_pd.json` metadata JSON.
 
 ```json
 [
@@ -253,7 +253,7 @@ Commands:
 
 Running a state is as simple as passing arguments to the appropriate subcommand.
 
-If you were trying to develop the San Deigo PD scraper found in `clean/ca/san_diego_pd.py`, you could run something like this.
+If you were trying to develop the San Diego PD scraper found in `clean/ca/san_diego_pd.py`, you could run something like this.
 
 ``` bash
 # List availabe agencies (and their slugs, which are required for scraping commands)
