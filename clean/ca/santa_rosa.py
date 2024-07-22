@@ -54,7 +54,7 @@ class Site:
         body = soup.find("div", class_="fr-view")
         links = body.find_all("a")
         for link in links:
-            if 'dropbox' in link["href"]:
+            if "dropbox" in link["href"]:
                 payload = {
                     "year": link.find_parent("ul")
                     .find_previous_sibling("h3")
@@ -68,7 +68,6 @@ class Site:
         outfile = self.data_dir.joinpath(f"{self.agency_slug}.json")
         self.cache.write_json(outfile, metadata)
         return outfile
-    
 
     def scrape(self, throttle: int = 4, filter: str = "") -> List[Path]:
         metadata = self.cache.read_json(

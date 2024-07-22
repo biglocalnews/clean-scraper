@@ -57,7 +57,7 @@ class Cache:
         """
         path = Path(self.path, name)
         logger.debug(f"Reading from cache {path}")
-        with open(path, newline="",encoding='utf-8') as infile:
+        with open(path, newline="", encoding="utf-8") as infile:
             return infile.read()
 
     def read_csv(self, name):
