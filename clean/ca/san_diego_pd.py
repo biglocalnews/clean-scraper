@@ -198,6 +198,7 @@ class Site:
             Local path of downloaded file
         """
         file_stem = url.split("/")[-1]
+        file_stem = file_stem.replace("?", "_")
         base_file = f"{self.agency_slug}/{file_stem}.html"
         # Download the page (if it's not already cached)
         cache_path = self.cache.download(base_file, url, "utf-8")
