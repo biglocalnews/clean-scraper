@@ -2,7 +2,7 @@ import time
 from pathlib import Path
 from typing import List
 
-from bs4 import BeautifulSoup, NavigableString, Tag
+from bs4 import BeautifulSoup, Tag
 
 from .. import utils
 from ..cache import Cache
@@ -68,12 +68,12 @@ class Site:
                 }
                 child_pages.append(child_page_data)
             time.sleep(throttle)
-        metadata = self._get_asset_links(child_pages)
+        metadata = self._get_asset_links(child_pages, base_filename)
         outfile = self.data_dir.joinpath(f"{self.agency_slug}.json")
         self.cache.write_json(outfile, metadata)
         return outfile
 
-    def _get_asset_links(self, pages) -> list:
+    def _get_asset_links(self, pages, parent_page) -> list:
         metadata = []
         for page in pages:
             html = self.cache.read(page["page_name"])
@@ -85,20 +85,6 @@ class Site:
                     if isinstance(link, Tag):
                         href = link.get("href")
                         if href and "DocumentCenter" in href:
-                            parent_div = link.find_parent("div")
-                            h4 = (
-                                parent_div.find_previous_sibling("h4")
-                                if parent_div
-                                else None
-                            )
-                            span = h4.find("span") if h4 else None
-                            panel_code = (
-                                span.get_text(strip=True)
-                                .split("Penal Code")[-1]
-                                .strip()
-                                if isinstance(span, (Tag, NavigableString))
-                                else None
-                            )
                             title = (
                                 soup.title.string.strip()
                                 if soup.title and soup.title.string
@@ -107,8 +93,9 @@ class Site:
                             name = link.string
                             payload = {
                                 "title": title,
-                                "panel_code": panel_code,
-                                "parent_page": str(page["page_url"]),
+                                "case_number": name,
+                                "parent_page": str(parent_page),
+                                "download_page": str(page["page_name"]),
                                 "asset_url": f"{'https://humboldtgov.org'}{href}",
                                 "name": name,
                             }
@@ -122,13 +109,14 @@ class Site:
                         if soup.title and isinstance(soup.title.string, str)
                         else None
                     )
-                    panel_code = page["page_name"].split("/")[-1].split("_")[0]
+                    case_number = page["page_name"].split("/")[-1].split("_")[0]
                     header = soup.find("h1")
                     name = header.get_text(strip=True) if header else None
                     payload = {
                         "title": title,
-                        "panel_code": panel_code,
-                        "parent_page": str(page["page_url"]),
+                        "case_number": case_number,
+                        "parent_page": str(parent_page),
+                        "download_page": str(page["page_name"]),
                         "asset_url": f"https://humboldtgov.nextrequest.com{link['href']}",
                         "name": name,
                     }
@@ -148,7 +136,7 @@ class Site:
         return dl_assets
 
     def _make_download_path(self, asset):
-        folder_name = asset["panel_code"]
+        folder_name = asset["case_number"]
         name = asset["name"]
         # If name has has no extension mark it as pdf as its a document format by meta-data
         if len(name.split(".")) == 1:
