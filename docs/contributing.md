@@ -172,17 +172,31 @@ The metadata file should contain an array of one or more objects with the below 
 - `name`: The base name of the file, minus prior path components.
 - `parent_page`: The local file path in cache to the HTML page containing the `asset_url`.
 - `title`: (optional) If available, this will typically be a human-friendly title for the file.
+- `details`: (optional) Additional relevant info for detecting changes, e.g. modified or creation timestamps, filesize, etc.
+  - `filesize`: (optional) Integer of bytes for determining changes to existing assets in the same url
+  - `date`: (optional) Use [ISO 8601](https://www.w3.org/TR/NOTE-datetime) `str`
+    - Complete date: YYYY-MM-DD (eg 1997-07-16)
+    - Complete date plus hours and minutes: YYYY-MM-DDThh:mmTZD (eg 1997-07-16T19:20+01:00)
+    - Complete date plus hours, minutes and seconds: YYYY-MM-DDThh:mm:ssTZD (eg 1997-07-16T19:20:30+01:00)
 
 Below is an example from `ca_san_diego_pd.json` metadata JSON.
+
+##### JSON Example
 
 ```json
 [
     {
         "asset_url": "https://sdpdsb1421.sandiego.gov/Sustained Findings/2022/11-21-2022 IA 2022-013/Audio/November+21%2C+2022+IA+%232022-013_Audio_Interview+Complainant_Redacted_KM.wav",
         "name": "November 21, 2022 IA #2022-013_Audio_Interview Complainant_Redacted_KM.wav",
-        "parent_page": "/Users/someuser/.clean-scraper/cache/ca_san_diego_pd/sb16-sb1421-ab748/11-21-2022_IA_2022-013.html",
-        "title": "11-21-2022 IA 2022-013"
+        "parent_page": "/ca_san_diego_pd/sb16-sb1421-ab748/11-21-2022_IA_2022-013.html",
+        "title": "11-21-2022 IA 2022-013",
+        "details": {
+            "filesize": 9999,
+            "date_modified": "2024-01-01T19:20:00+1:00"
+            ...
+        }
     },
+]
 ```
 
 #### Assets
@@ -205,29 +219,31 @@ Below is an example of the folder structure we used to organize HTML pages and f
 
 **But please use a sensible strategy. If in doubt, ping the maintainers to discuss.**
 
+##### Filetree Example
+
 ```bash
-/Users/tumgoren/.clean-scraper
-├── cache
-│   └── ca_san_diego_pd
-│       ├── assets
-│       │   └── sb16-sb1421-ab748
-│       │       ├── 08-30-2021_IA_2021-0651
+/Users/someuser/.clean-scraper
+├── cache/
+│   └── ca_san_diego_pd/
+│       ├── assets/
+│       │   └── sb16-sb1421-ab748/
+│       │       ├── 08-30-2021_IA_2021-0651/
 │       │       │   ├── August_30,_2021_IA_#2021-0651_Audio_Civilian_Witness_Statement_RedactedBK_mb.wav
 │       │       │   └── August_30,_2021_IA_#2021-0651_Audio_Complainant_Interview_RedactedBK_mb.wav
-│       │       └── 11-21-2022_IA_2022-013
+│       │       └── 11-21-2022_IA_2022-013/
 │       │           ├── November_21,_2022_IA_#2022-013_Audio_Interview_Complainant_Redacted_KM.wav
 │       │           ├── November_21,_2022_IA_#2022-013_Audio_Interview_Subject_Officer_Redacted_KM.wav
 │       │           ├── November_21,_2022_IA_#2022-013_Audio_Interview_Witness_Redacted_KM.wav
 │       │           ├── November_21,_2022_IA_#2022-013_Discipline_Documents_Redacted_KM.pdf
 │       │           └── November_21,_2022_IA_#2022-013_Documents_Redacted_KM.pdf
-│       ├── sb16-sb1421-ab748
+│       ├── sb16-sb1421-ab748/
 │       │   ├── 01-10-2022_3100_Imperial_Avenue.html
 │       │   ├── 01-11-2020_IA_2020-003.html
 │       │   ├── 01-13-2022_IA_2022-002.html
 │       │   ├── 01-27-2021_IA_2021-001.html
 │       │   ├── 02-11-2022_4900_University_Avenue.html
-
-
+│       ├── exports/
+│       │   └── san_diego_pd.json
 ```
 
 ## Running the CLI
