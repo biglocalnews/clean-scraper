@@ -95,7 +95,6 @@ class Site:
                                 "title": title,
                                 "case_number": name,
                                 "parent_page": str(parent_page),
-                                "download_page": str(page["page_name"]),
                                 "asset_url": f"{'https://humboldtgov.org'}{href}",
                                 "name": name,
                             }
