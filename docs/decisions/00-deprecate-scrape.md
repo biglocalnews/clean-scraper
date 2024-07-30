@@ -34,4 +34,4 @@ Please refer back to this document in discussions, code reviews, or additional p
 
 ## Outcome
 
-TBD
+Adopted
