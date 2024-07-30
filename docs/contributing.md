@@ -287,7 +287,7 @@ pipenv run python -m clean.cli scrape ca_san_diego_pd
 For more verbose logging, you can ask the system to show debugging information.
 
 ``` bash
-pipenv run python -m clean.cli ca_san_diego_pd -l DEBUG
+pipenv run python -m clean.cli scrape-meta ca_san_diego_pd -l DEBUG
 ```
 
 To be a good citizen of the Web and avoid IP blocking, you can throttle (i.e. slow down the scrapers with a time delay):
