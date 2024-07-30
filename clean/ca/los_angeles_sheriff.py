@@ -234,10 +234,10 @@ class Site:
                     "release_date_epoch",
                     "release_date_human",
                 ]:
-                    line["details"][
-                        ("case_" + item).replace("case_case_", "case_")
-                    ] = caseindex[recordid][item]
-                assetlist.append(line)
+                    line["details"][("case_" + item).replace("case_case_", "case_")] = (
+                        caseindex[recordid][item]
+                    )
+                    assetlist.append(line)
         return assetlist
 
     def _save_assetlist(self, assetlist):
