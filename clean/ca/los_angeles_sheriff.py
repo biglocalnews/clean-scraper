@@ -1,6 +1,7 @@
 import requests
 
 import json
+import logging
 import os
 from pathlib import Path
 import time
@@ -8,6 +9,8 @@ from typing import List
 
 from .. import utils
 from ..cache import Cache
+
+logger = logging.getLogger(__name__)
 
 
 class Site:
@@ -77,9 +80,9 @@ class Site:
         with open("index.json", "r", encoding="utf-8") as infile:
             rawindex = json.load(infile)
         if rawindex['MoreRecords'] or len(rawindex['Records']) != rawindex['ItemCount']:
-            print(f"Index JSON is incomplete or broken.")
+            logger.error(f"Index JSON is incomplete or broken.")
         else:
-            print(f"{rawindex['ItemCount']:,} records found.")
+            logger.debug(f"{rawindex['ItemCount']:,} records found.")
         return(rawindex)
 
 
@@ -140,7 +143,7 @@ class Site:
         targetfilename = self.subpages_dir / (recordid + ".json")
         r = requests.post(targeturl, headers=detailrequestheaders, data=localpayload)
         if not r.ok:
-            print(f"Problem downloading detail JSON for {recordid}")
+            logger.warning(f"Problem downloading detail JSON for {recordid}")
         else:
             with open(targetfilename, "wb") as outfile:
                 outfile.write(r.content)
@@ -166,7 +169,7 @@ class Site:
                 todo.add(recordid)
             elif indextimes[recordid] != oldtimestamps[recordid]:    # If something got modified, maybe
                     todo.add(recordid)
-        print(f"{len(todo):,} subpages to download")
+        logger.debug(f"{len(todo):,} subpages to download")
         return(todo)
 
 
@@ -215,8 +218,8 @@ class Site:
                 line['parent_page'] = str(sourcefile).replace("\\", "/").split("/")[-1]
                 line['title'] = asset['Name']
                 line['case_num'] = caseindex[recordid]['case_number']
-                line['file_size'] = asset['FileSize']
                 line['details'] = {}
+                line['details']['filesize'] = asset['FileSize']
                 line['details']['date_modified'] =  asset['ModifiedOnDisplay']
                 line['details']['date_created'] = asset['CreatedOnDisplay']
                 for item in ["case_type",
@@ -226,14 +229,14 @@ class Site:
                              "release_date_epoch",
                              "release_date_human"
                             ]:
-                    line['details'][item] = caseindex[recordid][item]
+                    line['details'][("case_" + item).replace("case_case_", "case_")] = caseindex[recordid][item]
                 assetlist.append(line)
         return(assetlist)
 
 
     def _save_assetlist(self, assetlist):
         targetfilename = self.data_dir / (self.siteslug + ".json")
-        print(f"Saving asset list to {targetfilename}")
+        logger.debug(f"Saving asset list to {targetfilename}")
         with open(targetfilename, "w", encoding="utf-8") as outfile:
             outfile.write(json.dumps(assetlist, indent=4*' '))
         return(targetfilename)
