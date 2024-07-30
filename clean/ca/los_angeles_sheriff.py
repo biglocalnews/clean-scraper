@@ -37,12 +37,12 @@ class Site:
     def scrape_meta(self, throttle: int = 0) -> Path:
         rawindex = self._fetch_index()
         oldtimestamps = self._fetch_old_timestamps()
-        indextimes = self._build_timestamps(oldtimestamps)
+        indextimes = self._build_timestamps(rawindex)
         detailtodo = self._build_detail_todo(indextimes, oldtimestamps)
         self._fetch_detail_pages(detailtodo, throttle)
         self._save_timestamps(indextimes)
         caseindex = self._build_caseindex(rawindex)
-        assetlist = self._build_assetlist(caseindefx)
+        assetlist = self._build_assetlist(caseindex)
         assetlist_filename = self._save_assetlist(assetlist)
         return(assetlist_filename)
 
@@ -147,7 +147,7 @@ class Site:
 
 
     def _build_detail_file_list(self):
-        cachefiles = site.cache.files(subdir=self.siteslug + "/subpages")
+        cachefiles = self.cache.files(subdir=self.siteslug + "/subpages")
         recordsdownloaded = set()
         for cachefile in cachefiles:
             corefilename = cachefile.replace("\\", "/").split("/")[-1].replace(".json", "")
@@ -158,7 +158,7 @@ class Site:
 
     def _build_detail_todo(self, indextimes, oldtimestamps):
         todo = set()
-        recordsdownloaded = _build_detail_file_list(self)    
+        recordsdownloaded = self._build_detail_file_list()    
         for recordid in indextimes:
             if recordid not in recordsdownloaded:
                 todo.add(recordid)    
@@ -203,7 +203,7 @@ class Site:
 
     def _build_assetlist(self, caseindex):
         assetlist = []
-        recordsdownloaded = _build_detail_file_list(self)
+        recordsdownloaded = self._build_detail_file_list()
         for recordid in recordsdownloaded:
             sourcefile = self.subpages_dir / (recordid + ".json")
             with open(sourcefile, "r", encoding="utf-8") as infile:
@@ -235,7 +235,7 @@ class Site:
         targetfilename = self.data_dir / (self.siteslug + ".json")
         print(f"Saving asset list to {targetfilename}")
         with open(targetfilename, "w", encoding="utf-8") as outfile:
-            outfile.write(json.dumps(caseindex, indent=4*' '))
+            outfile.write(json.dumps(assetlist, indent=4*' '))
         return(targetfilename)
 
     
