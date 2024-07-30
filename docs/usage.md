@@ -29,9 +29,6 @@ You can then run a scraper for an agency using its slug:
 ```bash
 # Scrape metadata about available files
 clean-scraper scrape-meta ca_san_diego_pd
-
-# Download files
-clean-scraper scrape ca_san_diego_pd
 ```
 
 > **NOTE**: Always run `scrape-meta` at least once initially. It generates output required by the `scrape` subcommand.
@@ -60,5 +57,5 @@ Options:
 
 Commands:
   list    List all available agencies and their slugs.
-  scrape  Command-line interface for downloading CLEAN files.
+  scrape-meta  Command-line interface for downloading CLEAN files.
 ```
