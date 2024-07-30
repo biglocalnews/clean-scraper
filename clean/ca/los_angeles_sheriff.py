@@ -1,9 +1,9 @@
-import requests
-
 import json
 import logging
-from pathlib import Path
 import time
+from pathlib import Path
+
+import requests
 
 from .. import utils
 from ..cache import Cache
@@ -70,7 +70,7 @@ class Site:
         r = requests.post(indexjsonurl, headers=indexrequestheaders, data=indexpayload)
         with open(self.cache_dir / (self.siteslug + "/index.json"), "wb") as outfile:
             outfile.write(r.content)
-        with open("index.json", "r", encoding="utf-8") as infile:
+        with open("index.json", encoding="utf-8") as infile:
             rawindex = json.load(infile)
         if rawindex["MoreRecords"] or len(rawindex["Records"]) != rawindex["ItemCount"]:
             logger.error("Index JSON is incomplete or broken.")
@@ -91,7 +91,7 @@ class Site:
     def _fetch_old_timestamps(self):
         filename = self.cache_dir / (self.siteslug + "/timestamplog.json")
         if self.cache.exists(filename):
-            with open(filename, "r", encoding="utf-8") as infile:
+            with open(filename, encoding="utf-8") as infile:
                 oldtimestamps = json.load(infile)
         else:
             oldtimestamps = {}
@@ -213,7 +213,7 @@ class Site:
         recordsdownloaded = self._build_detail_file_list()
         for recordid in recordsdownloaded:
             sourcefile = self.subpages_dir / (recordid + ".json")
-            with open(sourcefile, "r", encoding="utf-8") as infile:
+            with open(sourcefile, encoding="utf-8") as infile:
                 localjson = json.load(infile)
             for asset in localjson["SharePointItems"]:
                 line = {}
