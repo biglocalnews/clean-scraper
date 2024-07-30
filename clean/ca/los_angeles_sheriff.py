@@ -35,15 +35,15 @@ class Site:
 
 
     def scrape_meta(self, throttle: int = 0) -> Path:
-        rawindex = _fetch_index(self)
-        oldtimestamps = _fetch_old_timestamps(self)
-        indextimes = _build_timestamps(oldtimestamps)
-        detailtodo = _build_detail_todo(self, indextimes, oldtimestamps)
-        _fetch_detail_pages(self, detailtodo, throttle)
-        _save_timestamps(self, indextimes)
-        caseindex = _build_caseindex(self, rawindex)
-        assetlist = _build_assetlist(self, caseindex)
-        assetlist_filename = _save_assetlist(self, assetlist)
+        rawindex = self._fetch_index()
+        oldtimestamps = self._fetch_old_timestamps()
+        indextimes = self._build_timestamps(oldtimestamps)
+        detailtodo = self._build_detail_todo(indextimes, oldtimestamps)
+        self._fetch_detail_pages(detailtodo, throttle)
+        self._save_timestamps(indextimes)
+        caseindex = self._build_caseindex(rawindex)
+        assetlist = self._build_assetlist(caseindefx)
+        assetlist_filename = self._save_assetlist(assetlist)
         return(assetlist_filename)
 
     
@@ -83,7 +83,7 @@ class Site:
         return(rawindex)
 
 
-    def _build_timestamps(indexjson: dict):
+    def _build_timestamps(self, rawindex: dict):
         indextimes = {}
         for record in rawindex['Records']:
             recordid = record['Id']
@@ -96,7 +96,7 @@ class Site:
 
     def _fetch_old_timestamps(self):
         filename = self.cache_dir / (self.siteslug + "/timestamplog.json")
-        if site.cache.exists(filename):
+        if self.cache.exists(filename):
             with open(filename, "r", encoding="utf-8") as infile:
                 oldtimestamps = json.load(infile)
         else:
@@ -220,7 +220,7 @@ class Site:
                 line['details']['date_modified'] =  asset['ModifiedOnDisplay']
                 line['details']['date_created'] = asset['CreatedOnDisplay']
                 for item in ["case_type",
-                             "suspectvictim",s
+                             "suspectvictim",
                              "event_date_epoch",
                              "event_date_human",
                              "release_date_epoch",
