@@ -5,7 +5,7 @@ from pathlib import Path
 
 import requests
 
-import config.los_angeles_sheriff
+from .config import config_los_angeles_sheriff
 
 from .. import utils
 from ..cache import Cache
@@ -48,7 +48,7 @@ class Site:
 
     def _fetch_index(self):
         indexjsonurl = "https://lasdsb1421.powerappsportals.us/_services/entity-grid-data.json/f46b70cc-580b-4f1a-87c3-41deb48eb90d"
-        r = requests.post(indexjsonurl, headers=indexrequestheaders, data=indexpayload)
+        r = requests.post(indexjsonurl, headers=config_los_angeles_sheriff.indexrequestheaders, data=config_los_angeles_sheriff.indexpayload)
         with open(self.cache_dir / (self.siteslug + "/index.json"), "wb") as outfile:
             outfile.write(r.content)
         with open("index.json", encoding="utf-8") as infile:
@@ -87,14 +87,14 @@ class Site:
     def _get_detail_json(self, recordid: str):
         referer = "https://lasdsb1421.powerappsportals.us/disfiles/?id=" + recordid
         detailrequestheaders["Referer"] = referer
-        localpayload = detailpayload
-        localpayload = detailpayload.replace("IDGOESHERE", recordid)
+        localpayload = config_los_angeles_sheriff.detailpayload
+        localpayload = localpayload.replace("IDGOESHERE", recordid)
         targeturl = (
             "https://lasdsb1421.powerappsportals.us/_services/sharepoint-data.json/"
             + recordid
         )
         targetfilename = self.subpages_dir / (recordid + ".json")
-        r = requests.post(targeturl, headers=detailrequestheaders, data=localpayload)
+        r = requests.post(targeturl, headers=config_los_angles_sheriff.detailrequestheaders, data=localpayload)
         if not r.ok:
             logger.warning(f"Problem downloading detail JSON for {recordid}")
         else:
