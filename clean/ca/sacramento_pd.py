@@ -55,7 +55,7 @@ class Site:
         Returns:
             Path: Local path of JSON file containing metadata on downloadable files
         """
-        self._download_index_pages(self.disclosure_url)
+        self._download_index_page(self.disclosure_url)
         metadata_filepath = self._create_metadata_json()
         return metadata_filepath
 
@@ -77,7 +77,7 @@ class Site:
             downloaded_assets.append(self.cache.download(str(download_path), url))
         return downloaded_assets
 
-    def _download_index_pages(self, url: str) -> Path:
+    def _download_index_page(self, url: str) -> Path:
         """Download index pages for SB16/SB1421/AB748.
 
         Index pages link to child pages containing videos and
@@ -137,9 +137,9 @@ class Site:
                 # Split URL and remove empty strings for trailing slash
                 url_split = [u for u in parsed_url.path.split("/") if u != ""]
                 if not self._is_asset(link["asset_url"]):
-                    file_stem = url_split[-1]
-                    soup = self._download_and_parse(link["asset_url"], file_stem)
-                    photo_links = self._extract_photos(soup, file_stem, link)
+                    filepath_stem = url_split[-1]
+                    soup = self._download_and_parse(link["asset_url"], filepath_stem)
+                    photo_links = self._extract_photos(soup, filepath_stem, link)
                     modified_links.extend(photo_links)
                 else:
                     modified_links.append(
@@ -153,7 +153,7 @@ class Site:
         return modified_links
 
     def _extract_photos(
-        self, soup: BeautifulSoup, file_stem: str, link: MetadataDict
+        self, soup: BeautifulSoup, filepath_stem: str, link: MetadataDict
     ) -> List[MetadataDict]:
         """
         Extract photo links from a BeautifulSoup object and return a list of MetadataDict.
@@ -172,9 +172,11 @@ class Site:
         for photo in photo_links:
             if str(photo["href"]).endswith("/"):
                 child_url = f'{ASSET_URL}{photo["href"]}'
-                child_file_stem = child_url.split("/")[-2]
-                child_soup = self._download_and_parse(child_url, child_file_stem)
-                more_photos = self._extract_photos(child_soup, child_file_stem, link)
+                child_filepath_stem = child_url.split("/")[-2]
+                child_soup = self._download_and_parse(child_url, child_filepath_stem)
+                more_photos = self._extract_photos(
+                    child_soup, child_filepath_stem, link
+                )
                 photos.extend(more_photos)
 
             else:
@@ -185,7 +187,7 @@ class Site:
                             if title_tag
                             else link["title"]
                         ),
-                        "parent_page": file_stem,
+                        "parent_page": filepath_stem,
                         "asset_url": f'{ASSET_URL}{photo["href"]}',
                         "name": photo.get_text(),
                     }
@@ -193,18 +195,18 @@ class Site:
 
         return photos
 
-    def _download_and_parse(self, url: str, file_stem: str) -> BeautifulSoup:
+    def _download_and_parse(self, url: str, filepath_stem: str) -> BeautifulSoup:
         """
         Download and parse a URL, returning a BeautifulSoup object.
 
         Args:
             url (str): The URL to download and parse.
-            file_stem (str): The stem of the file name to save the downloaded HTML.
+            filepath_stem (str): The stem of the file name to save the downloaded HTML.
 
         Returns:
             BeautifulSoup: The parsed HTML as a BeautifulSoup object.
         """
-        base_file = f"{self.agency_slug}/{file_stem}.html"
+        base_file = f"{self.agency_slug}/{filepath_stem}.html"
         cache_path = self.cache.download(base_file, url, "utf-8")
         html = self.cache.read(cache_path)
         return BeautifulSoup(html, "html.parser")
