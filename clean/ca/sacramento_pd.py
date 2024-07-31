@@ -1,4 +1,5 @@
 import copy
+import logging
 from pathlib import Path
 from typing import List
 from urllib.parse import urlparse
@@ -12,6 +13,8 @@ from ..utils import MetadataDict
 BASE_URL = "https://www.cityofsacramento.gov"
 DISCLOSURE_PATH = "/police/police-transparency/release-of-police-officer-personnel-records--pc-832-7-b--"
 ASSET_URL = "https://cityofsacramento.hosted-by-files.com"
+
+logger = logging.getLogger(__name__)
 
 
 class Site:
@@ -91,6 +94,7 @@ class Site:
                     "title": url["title"],
                     "parent_page": html_location,
                     "asset_url": url["href"],
+                    "case_num": url["case_num"],
                     "name": url["name"],
                 }
             )
@@ -131,6 +135,7 @@ class Site:
                     "title": title_str,
                     "name": self._clean_text(link.text),
                     "href": href_str,
+                    "case_num": link.text.split(" from ")[-1],
                 }
 
     def _extract_child_links(self, links: List[MetadataDict]) -> List[MetadataDict]:
@@ -144,16 +149,22 @@ class Site:
             List[MetadataDict]: A modified list of links with additional CSI image links added to the metadata.
         """
         modified_links = copy.deepcopy(links)
-        for link in links:
+        for link in modified_links:
             if link["asset_url"].endswith("/"):
                 parsed_url = urlparse(link["asset_url"])
                 # Split URL and remove empty strings for trailing slash
                 url_split = [u for u in parsed_url.path.split("/") if u != ""]
                 if not self._is_asset(link["asset_url"]):
-                    filepath_stem = url_split[-1]
-                    soup = self._download_and_parse(link["asset_url"], filepath_stem)
-                    photo_links = self._extract_photos(soup, filepath_stem, link)
-                    modified_links.extend(photo_links)
+                    filepath_stem = f"{link['case_num']}/{url_split[-1]}"
+                    try:
+                        soup = self._download_and_parse(
+                            link["asset_url"], filepath_stem
+                        )
+                        photo_links = self._extract_photos(soup, filepath_stem, link)
+                        modified_links.extend(photo_links)
+                    except AssertionError as e:
+                        logger.error(f"Failed to download {link['asset_url']}: {e}")
+                        continue
                 else:
                     modified_links.append(
                         {
@@ -161,6 +172,7 @@ class Site:
                             "parent_page": link["parent_page"],
                             "asset_url": link["asset_url"],
                             "name": link["name"],
+                            "case_num": link["case_num"],
                         }
                     )
         return modified_links
@@ -185,7 +197,7 @@ class Site:
         for photo in photo_links:
             if str(photo["href"]).endswith("/"):
                 child_url = f'{ASSET_URL}{photo["href"]}'
-                child_filepath_stem = child_url.split("/")[-2]
+                child_filepath_stem = f"{link['case_num']}/{child_url.split('/')[-2]}"
                 child_soup = self._download_and_parse(child_url, child_filepath_stem)
                 more_photos = self._extract_photos(
                     child_soup, child_filepath_stem, link
@@ -203,6 +215,7 @@ class Site:
                         "parent_page": filepath_stem,
                         "asset_url": f'{ASSET_URL}{photo["href"]}',
                         "name": photo.get_text(),
+                        "case_num": link["case_num"],
                     }
                 )
 

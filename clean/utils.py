@@ -30,6 +30,7 @@ CLEAN_LOG_DIR = CLEAN_OUTPUT_DIR / "logs"
 
 class MetadataDict(TypedDict):
     asset_url: str
+    case_num: Optional[str]
     name: str
     parent_page: str
     title: Optional[str]
