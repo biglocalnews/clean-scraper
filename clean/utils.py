@@ -4,13 +4,14 @@ import logging
 import os
 from pathlib import Path
 from time import sleep
-from typing import List, Literal, NotRequired, Optional, TypedDict
+from typing import List, Literal, Optional, TypedDict
 from urllib.parse import parse_qs, urlparse
 
 import requests
 import us  # type: ignore
 from pytube import Playlist, YouTube  # type: ignore
 from retry import retry
+from typing_extensions import NotRequired
 
 logger = logging.getLogger(__name__)
 
