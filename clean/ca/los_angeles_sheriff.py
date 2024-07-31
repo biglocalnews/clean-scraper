@@ -5,7 +5,7 @@ from pathlib import Path
 
 import requests
 
-import config.los_angeles_sheriff
+from .config import config_los_angeles_sheriff
 
 from .. import utils
 from ..cache import Cache
