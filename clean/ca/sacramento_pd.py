@@ -1,5 +1,4 @@
 import copy
-import time
 from pathlib import Path
 from typing import List
 from urllib.parse import urlparse
@@ -59,24 +58,6 @@ class Site:
         metadata_filepath = self._create_metadata_json()
         return metadata_filepath
 
-    def scrape(self, throttle: int = 0, filter: str = "") -> List[Path]:
-        metadata = self.cache.read_json(
-            self.data_dir.joinpath(f"{self.agency_slug}.json")
-        )
-        downloaded_assets = []
-        for asset in metadata:
-            url = asset["asset_url"]
-            if filter and filter not in url:
-                continue
-            index_dir = (
-                asset["parent_page"].split(f"{self.agency_slug}/")[-1].rstrip(".html")
-            )
-            asset_name = asset["name"].replace(" ", "_")
-            download_path = Path(self.agency_slug, "assets", index_dir, asset_name)
-            time.sleep(throttle)
-            downloaded_assets.append(self.cache.download(str(download_path), url))
-        return downloaded_assets
-
     def _download_index_page(self, url: str) -> Path:
         """Download index pages for SB16/SB1421/AB748.
 
@@ -116,9 +97,41 @@ class Site:
 
         metadata = self._extract_child_links(links)
         outfile = self.data_dir.joinpath(f"{self.agency_slug}.json")
-        self._test_repeated_asset_url(metadata)
         self.cache.write_json(outfile, metadata)
         return outfile
+
+    def _extract_index_urls(self, lists: ResultSet[Tag]):
+        """
+        Extract the index URLs from a list of tags, accounting for relative URLs.
+
+        Args:
+            lists (ResultSet[Tag]): A list of tags containing the index URLs.
+
+        Yields:
+            dict: A dictionary containing the extracted information for each index URL.
+                The dictionary has the following keys:
+                - "title": The title of the index URL.
+                - "name": The name of the index URL.
+                - "href": The URL of the index link.
+
+        """
+        for li in lists:
+            title_tag = li.select_one("strong")
+            title_str = ""
+            if title_tag is not None:
+                title_str = self._clean_text(
+                    f"{title_tag.get_text()} {title_tag.next_sibling}"
+                )
+            links = li.find_all("a")
+            for link in links:
+                href_str = link["href"]
+                if "http" not in href_str:
+                    href_str = f"{self.base_url}{href_str}"
+                yield {
+                    "title": title_str,
+                    "name": self._clean_text(link.text),
+                    "href": href_str,
+                }
 
     def _extract_child_links(self, links: List[MetadataDict]) -> List[MetadataDict]:
         """
@@ -236,56 +249,3 @@ class Site:
         parsed_url = urlparse(url)
         path = parsed_url.path
         return path.endswith(".pdf") or path.endswith(".zip")
-
-    def _extract_index_urls(self, lists: ResultSet[Tag]):
-        """
-        Extract the index URLs from a list of tags, accounting for relative URLs.
-
-        Args:
-            lists (ResultSet[Tag]): A list of tags containing the index URLs.
-
-        Yields:
-            dict: A dictionary containing the extracted information for each index URL.
-                The dictionary has the following keys:
-                - "title": The title of the index URL.
-                - "name": The name of the index URL.
-                - "href": The URL of the index link.
-
-        """
-        for li in lists:
-            title_tag = li.select_one("strong")
-            title_str = ""
-            if title_tag is not None:
-                title_str = self._clean_text(
-                    f"{title_tag.get_text()} {title_tag.next_sibling}"
-                )
-            links = li.find_all("a")
-            for link in links:
-                href_str = link["href"]
-                if "http" not in href_str:
-                    href_str = f"{self.base_url}{href_str}"
-                yield {
-                    "title": title_str,
-                    "name": self._clean_text(link.text),
-                    "href": href_str,
-                }
-
-    def _test_repeated_asset_url(self, objects: List[MetadataDict]):
-        """
-        Check if the given list of objects contains any repeated asset URLs and returns them.
-
-        Args:
-            objects (List[MetadataDict]): A list of objects, where each object is a dictionary containing metadata.
-
-        Returns:
-            set: A set of asset URLs that are repeated in the given list of objects.
-        """
-        seen_urls = set()
-        repeated_urls = set()
-        for obj in objects:
-            asset_url = obj.get("asset_url")
-            if asset_url in seen_urls:
-                repeated_urls.add(asset_url)
-            else:
-                seen_urls.add(asset_url)
-        return repeated_urls

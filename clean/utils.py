@@ -255,3 +255,24 @@ def is_youtube_playlist(url: str) -> bool:
         return True
 
     return False
+
+
+def get_repeated_asset_url(self, objects: List[MetadataDict]):
+    """
+    Check if the given list of objects contains any repeated asset URLs and returns them.
+
+    Args:
+        objects (List[MetadataDict]): A list of objects, where each object is a dictionary containing metadata.
+
+    Returns:
+        set: A set of asset URLs that are repeated in the given list of objects.
+    """
+    seen_urls = set()
+    repeated_urls = set()
+    for obj in objects:
+        asset_url = obj.get("asset_url")
+        if asset_url in seen_urls:
+            repeated_urls.add(asset_url)
+        else:
+            seen_urls.add(asset_url)
+    return repeated_urls
