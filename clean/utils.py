@@ -4,7 +4,7 @@ import logging
 import os
 from pathlib import Path
 from time import sleep
-from typing import List, Literal, Optional, TypedDict
+from typing import List, Literal, NotRequired, Optional, TypedDict
 from urllib.parse import parse_qs, urlparse
 
 import requests
@@ -30,10 +30,11 @@ CLEAN_LOG_DIR = CLEAN_OUTPUT_DIR / "logs"
 
 class MetadataDict(TypedDict):
     asset_url: str
-    case_num: Optional[str]
+    case_num: NotRequired[str]
     name: str
     parent_page: str
     title: Optional[str]
+    details: NotRequired[dict]
 
 
 def create_directory(path: Path, is_file: bool = False):
