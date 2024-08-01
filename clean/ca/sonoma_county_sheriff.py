@@ -60,7 +60,6 @@ class Site:
                     "name": link.strong.string,
                 }
                 metadata.append(payload)
-        print(metadata)
         outfile = self.data_dir.joinpath(f"{self.agency_slug}.json")
         self.cache.write_json(outfile, metadata)
         return outfile

@@ -36,6 +36,7 @@ retry = "*"
 urllib3 = "1.26.18" # pegged to avoid test issue
 typing-extensions = "*"
 us = "*"
+pytube = "*"
 
 [pipenv]
 allow_prereleases = false
