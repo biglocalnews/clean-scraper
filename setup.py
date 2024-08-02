@@ -9,7 +9,7 @@ def read(file_name):
     """Read the provided file."""
     this_dir = os.path.dirname(__file__)
     file_path = os.path.join(this_dir, file_name)
-    with open(file_path) as f:
+    with open(file_path, "r", encoding="utf-8") as f:
         return f.read()
 
 
