@@ -7,7 +7,7 @@ from os.path import expanduser, join
 from pathlib import Path
 from typing import Union
 
-from .utils import get_url
+from .utils import MetadataDict, get_url, get_youtube_url
 
 logger = logging.getLogger(__name__)
 
@@ -109,22 +109,28 @@ class Cache:
         # Open the local Path
         local_path = Path(self.path, name)
         local_path.parent.mkdir(parents=True, exist_ok=True)
+        url_queue = [url]
         # Request the URL
         if not force and self.exists(name):
             logger.debug(f"File found in cache: {local_path}")
             return local_path
 
-        with get_url(url, stream=True, **kwargs) as r:
-            # If there's no encoding, set it
-            if encoding:
-                r.encoding = encoding
-            elif r.encoding is None:
-                r.encoding = "utf-8"
-            logger.debug(f"Downloading {url} to {local_path}")
-            # Write out the file in little chunks
-            with open(local_path, "wb") as f:
-                for chunk in r.iter_content(chunk_size=8192):
-                    f.write(chunk)
+        if "youtube" in url:
+            logger.debug("Detected Youtube URL")
+            url_queue = get_youtube_url(url)
+
+        for url in url_queue:
+            with get_url(url, stream=True, **kwargs) as r:
+                # If there's no encoding, set it
+                if encoding:
+                    r.encoding = encoding
+                elif r.encoding is None:
+                    r.encoding = "utf-8"
+                logger.debug(f"Downloading {url} to {local_path}")
+                # Write out the file in little chunks
+                with open(local_path, "wb") as f:
+                    for chunk in r.iter_content(chunk_size=8192):
+                        f.write(chunk)
         # Return the path
         return local_path
 
@@ -158,7 +164,9 @@ class Cache:
             fh.write(content)
         return str(out)
 
-    def write_json(self, name: Union[Path, str], files_meta: list[dict]) -> Path:
+    def write_json(
+        self, name: Union[Path, str], files_meta: list[MetadataDict]
+    ) -> Path:
         """Save JSON data to cache.
 
         Typically, this should be an agency-specific directory inside the cache folder.
