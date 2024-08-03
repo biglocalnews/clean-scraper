@@ -76,12 +76,12 @@ class Site:
                         name = link_href.split("/")[-1]
                         name = urllib.parse.unquote(name)
                         payload = {
-                            "title": title,
-                            "case_number": case_id,
-                            "date": date,
-                            "parent_page": str(filename),
                             "asset_url": link_href,
+                            "case_num": case_id,
                             "name": name,
+                            "title": title,
+                            "parent_page": str(filename),
+                            "details": {"date": date},
                         }
                         metadata.append(payload)
                     time.sleep(throttle)
