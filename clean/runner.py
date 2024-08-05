@@ -48,6 +48,12 @@ class Runner:
         Returns: a Path object leading to a CSV file.
         """
         # Get the module
+        if agency_slug[2] != "_":
+            logger.error(
+                "Scraper slugs must be prefixed with the state postal code and an underscore."
+            )
+            logger.error("Example: clean-scraper scrape-meta ca_san_diego_pd")
+
         state = agency_slug[:2].strip().lower()
         slug = agency_slug[3:].strip().lower()
         state_mod = import_module(f"clean.{state}.{slug}")
@@ -71,6 +77,11 @@ class Runner:
         Returns: a Path object leading to directory where downloaded files are stored.
         """
         # Get the module
+        if agency_slug[2] != "_":
+            logger.error(
+                f"No scraper named {agency_slug} was found. Did you prefix your state postal code followed by an underscore?"
+            )
+
         state = agency_slug[:2].strip().lower()
         slug = agency_slug[3:].strip().lower()
         state_mod = import_module(f"clean.{state}.{slug}")
