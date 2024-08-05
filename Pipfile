@@ -37,6 +37,7 @@ urllib3 = "1.26.18" # pegged to avoid test issue
 typing-extensions = "*"
 us = "*"
 pytube = "*"
+clean-scraper = {file = ".", editable = true}
 
 [pipenv]
 allow_prereleases = false
