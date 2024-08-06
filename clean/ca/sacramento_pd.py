@@ -94,7 +94,7 @@ class Site:
                     "title": url["title"],
                     "parent_page": html_location,
                     "asset_url": url["href"],
-                    "case_num": url["case_num"],
+                    "case_id": url["case_id"],
                     "name": url["name"],
                 }
             )
@@ -135,7 +135,7 @@ class Site:
                     "title": title_str,
                     "name": self._clean_text(link.text),
                     "href": href_str,
-                    "case_num": link.text.split(" from ")[-1],
+                    "case_id": link.text.split(" from ")[-1],
                 }
 
     def _extract_child_links(self, links: List[MetadataDict]) -> List[MetadataDict]:
@@ -155,7 +155,7 @@ class Site:
                 # Split URL and remove empty strings for trailing slash
                 url_split = [u for u in parsed_url.path.split("/") if u != ""]
                 if not self._is_asset(link["asset_url"]):
-                    filepath_stem = f"{link['case_num']}/{url_split[-1]}"
+                    filepath_stem = f"{link['case_id']}/{url_split[-1]}"  # type: ignore
                     try:
                         soup = self._download_and_parse(
                             link["asset_url"], filepath_stem
@@ -172,7 +172,7 @@ class Site:
                             "parent_page": link["parent_page"],
                             "asset_url": link["asset_url"],
                             "name": link["name"],
-                            "case_num": link["case_num"],
+                            "case_id": link["case_id"],
                         }
                     )
         return modified_links
@@ -197,7 +197,7 @@ class Site:
         for photo in photo_links:
             if str(photo["href"]).endswith("/"):
                 child_url = f'{ASSET_URL}{photo["href"]}'
-                child_filepath_stem = f"{link['case_num']}/{child_url.split('/')[-2]}"
+                child_filepath_stem = f"{link['case_id']}/{child_url.split('/')[-2]}"
                 child_soup = self._download_and_parse(child_url, child_filepath_stem)
                 more_photos = self._extract_photos(
                     child_soup, child_filepath_stem, link
@@ -215,7 +215,7 @@ class Site:
                         "parent_page": filepath_stem,
                         "asset_url": f'{ASSET_URL}{photo["href"]}',
                         "name": photo.get_text(),
-                        "case_num": link["case_num"],
+                        "case_id": link["case_id"],
                     }
                 )
 
