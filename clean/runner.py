@@ -78,9 +78,10 @@ class Runner:
         """
         # Get the module
         if agency_slug[2] != "_":
-            logger.error(
-                f"No scraper named {agency_slug} was found. Did you prefix your state postal code followed by an underscore?"
-            )
+            message = "Scraper slugs must be prefixed with the state postal code and an underscore. "
+            message += "Example: clean-scraper scrape ca_san_diego_pd. "
+            message += f"Your supplied agency, {agency_slug}, has no state prefix."
+            logger.critical(message)
 
         state = agency_slug[:2].strip().lower()
         slug = agency_slug[3:].strip().lower()
