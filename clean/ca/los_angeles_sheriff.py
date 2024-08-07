@@ -1,4 +1,3 @@
-import json
 import logging
 import time
 from pathlib import Path
@@ -57,10 +56,13 @@ class Site:
             headers=index_request_headers,
             data=index_payload,
         )
-        with open(self.cache_dir / (self.siteslug + "/index.json"), "wb") as outfile:
-            outfile.write(r.content)
-        with open("index.json", encoding="utf-8") as infile:
-            rawindex = json.load(infile)
+        targetfilename = f"{self.siteslug}/index.json"
+        self.cache.write_binary(targetfilename, r.content)
+        # HEY!
+        #        with open(self.cache_dir / (self.siteslug + "/index.json"), "wb") as outfile:
+        #            outfile.write(r.content)
+        rawindex = self.cache.read_json(self.cache_dir / targetfilename)
+        # HEY! #70 implementation affects above
         if rawindex["MoreRecords"] or len(rawindex["Records"]) != rawindex["ItemCount"]:
             logger.error("Index JSON is incomplete or broken.")
         else:
@@ -78,18 +80,20 @@ class Site:
         return indextimes
 
     def _fetch_old_timestamps(self):
-        filename = self.cache_dir / (self.siteslug + "/timestamplog.json")
-        if self.cache.exists(filename):
-            with open(filename, encoding="utf-8") as infile:
-                oldtimestamps = json.load(infile)
+        partfilename = self.siteslug + "/timestamplog.json"
+        fullfilename = self.cache_dir / partfilename
+        if self.cache.exists(partfilename):
+            # Hey! Waiting on #70 fix
+            # oldtimestamps = self.cache.read_json(filename)
+            oldtimestamps = self.cache.read_json(fullfilename)
         else:
             oldtimestamps = {}
         return oldtimestamps
 
     def _save_timestamps(self, indextimestamps):
-        filename = self.cache_dir / (self.siteslug + "/timestamplog.json")
-        with open(filename, "w", encoding="utf-8") as outfile:
-            outfile.write(json.dumps(indextimestamps))
+        targetfilename = self.siteslug + "/timestamplog.json"
+        # Hey! Waiting on #70 fix
+        self.cache.write_json(self.cache_dir / targetfilename, indextimestamps)
         return
 
     def _get_detail_json(self, recordid: str):
@@ -102,7 +106,7 @@ class Site:
             "https://lasdsb1421.powerappsportals.us/_services/sharepoint-data.json/"
             + recordid
         )
-        targetfilename = self.subpages_dir / (recordid + ".json")
+        targetfilename = f"{self.siteslug}/subpages/{recordid}.json"
         r = requests.post(
             targeturl,
             headers=local_request_headers,
@@ -111,8 +115,7 @@ class Site:
         if not r.ok:
             logger.warning(f"Problem downloading detail JSON for {recordid}")
         else:
-            with open(targetfilename, "wb") as outfile:
-                outfile.write(r.content)
+            self.cache.write_binary(targetfilename, r.content)
 
     def _build_detail_file_list(self):
         cachefiles = self.cache.files(subdir=self.siteslug + "/subpages")
@@ -186,9 +189,10 @@ class Site:
         assetlist = []
         recordsdownloaded = self._build_detail_file_list()
         for recordid in recordsdownloaded:
-            sourcefile = self.subpages_dir / (recordid + ".json")
-            with open(sourcefile, encoding="utf-8") as infile:
-                localjson = json.load(infile)
+            # Hey! #70 fix
+            # sourcefile = f"{self.siteslug}/subpages/{recordid}.json"
+            sourcefile = self.cache_dir / f"{self.siteslug}/subpages/{recordid}.json"
+            localjson = self.cache.read_json(sourcefile)
             for asset in localjson["SharePointItems"]:
                 line = {}
                 line["asset_url"] = self.rooturl + asset["Url"]
@@ -217,6 +221,7 @@ class Site:
     def _save_assetlist(self, assetlist):
         targetfilename = self.data_dir / (self.siteslug + ".json")
         logger.debug(f"Saving asset list to {targetfilename}")
-        with open(targetfilename, "w", encoding="utf-8") as outfile:
-            outfile.write(json.dumps(assetlist, indent=4 * " "))
+        # Hey! #70 fix
+        # self.cache.write_json(targetfilename, assetlist)
+        self.cache.write_json(self.cache_dir / targetfilename, assetlist)
         return targetfilename
