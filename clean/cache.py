@@ -71,7 +71,7 @@ class Cache:
         """
         path = Path(self.path, name)
         logger.debug(f"Reading CSV from cache {path}")
-        with open(path) as fh:
+        with open(path, encoding="utf-8") as fh:
             return list(csv.reader(fh))
 
     def read_json(self, name: Path) -> list[dict]:
@@ -83,7 +83,7 @@ class Cache:
         Returns:
             list of dicts
         """
-        with open(name) as fh:
+        with open(name, encoding="utf-8") as fh:
             return json.load(fh)
 
     def download(
@@ -160,7 +160,7 @@ class Cache:
         out = Path(self.path, name)
         out.parent.mkdir(parents=True, exist_ok=True)
         logger.debug(f"Writing to cache {out}")
-        with open(out, "w", newline="") as fh:
+        with open(out, "w", newline="", encoding="utf-8") as fh:
             fh.write(content)
         return str(out)
 
