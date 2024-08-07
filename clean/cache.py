@@ -165,7 +165,7 @@ class Cache:
         return str(out)
 
     def write_json(
-        self, name: Union[Path, str], files_meta: Union[list[MetadataDict], list, dict]
+        self, name: Union[Path, str], files_meta: Union[list[MetadataDict], dict]
     ) -> Path:
         """Save JSON data to cache.
 
@@ -175,8 +175,9 @@ class Cache:
 
             $HOME/.clean-scraper/cache/exports/ca_san_diego_pd.json
 
-        Provide file contents as a List of dictionaries and the relative path to a location inside
-        the cache directory or a full Path where the file should be written.
+        Provide file contents as a dictionary or MetadataDict list and the
+        relative path to a location inside the cache directory or a full Path
+        where the file should be written.
 
         The relative file path can include additional directories
         (e.g. 'ca_san_diego_pd/2024_page_1.html'), which will be created if they don't exist.
@@ -189,7 +190,7 @@ class Cache:
 
         Args:
             name (Path|str): Full path or partial path, relative to cache dir, where content should be saved.
-            content (list[dict]): List of dicts containing file metadata for downloadable assets
+            content (list[MetadataDict], Dict): List of dicts containing file metadata for downloadable assets, or a dictionary
 
         Returns:
             Path: Full path to the saved file
