@@ -135,7 +135,7 @@ class Cache:
         return local_path
 
     def write(self, name, content):
-        """Save file contents to cache.
+        """Save text content to a file in cache.
 
         Typically, this should be a state and agency-specific directory
         inside the cache folder.
@@ -161,6 +161,31 @@ class Cache:
         out.parent.mkdir(parents=True, exist_ok=True)
         logger.debug(f"Writing to cache {out}")
         with open(out, "w", newline="", encoding="utf-8") as fh:
+            fh.write(content)
+        return str(out)
+
+    def write_binary(self, name, content):
+        """Save binary contents to a file in cache.
+
+            $HOME/.clean-scraper/cache/ca_san_diego_pd/2024_page_1.xlsx
+
+        Provide file contents and the partial name (relative to cache directory)
+        where file should written. The partial file path can include additional
+        directories (e.g. 'ca_san_diego_pd/2024_page_1.xlsx'), which will be created if they
+        don't exist.
+
+        Example: ::
+
+            cache.write("ca_san_diego_pd/2024_page_1.xlsx", response.content)
+
+        Args:
+            name (str): Partial name, relative to cache dir, where content should be saved.
+            content (str): Any binarycontent to save to file.
+        """
+        out = Path(self.path, name)
+        out.parent.mkdir(parents=True, exist_ok=True)
+        logger.debug(f"Writing to cache {out}")
+        with open(out, "wb") as fh:
             fh.write(content)
         return str(out)
 
