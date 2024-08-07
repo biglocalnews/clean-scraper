@@ -74,14 +74,14 @@ class Cache:
         with open(path, encoding="utf-8") as fh:
             return list(csv.reader(fh))
 
-    def read_json(self, name: Path) -> list[dict]:
+    def read_json(self, name: Path) -> Union[list[dict], dict]:
         """Read JSON file from cache.
 
         Args:
             name (str): Partial name, relative to cache dir (eg. 'exports/ca_san_diego_pd.json')
 
         Returns:
-            list of dicts
+            list of dictionaries or one dictionary
         """
         with open(name, encoding="utf-8") as fh:
             return json.load(fh)
@@ -165,7 +165,7 @@ class Cache:
         return str(out)
 
     def write_json(
-        self, name: Union[Path, str], files_meta: list[MetadataDict]
+        self, name: Union[Path, str], files_meta: Union[list[MetadataDict], list, dict]
     ) -> Path:
         """Save JSON data to cache.
 
