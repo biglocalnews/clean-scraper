@@ -29,6 +29,8 @@ class Site:
             f"{self.base_url}/sb1421/use-of-force-great-bodily-injury-cases-gbi/",
         ]
 
+        # HEY! Need to add AB748 records as well
+
         # HEY! Need to build out dirs with appropriate slug structure
         # Need to add detail dir
 
@@ -50,6 +52,10 @@ class Site:
         # Not sure what's up with these PDF links, but they're appearing on the page.
         # Might need to tighten up logic in _get_detail_page_links.
         # pdf_links = filter(lambda x: x.endswith('.pdf'), page_urls)
+
+        # Need to handle AB748 page here also
+        # Need to revise logic to handle older in-page PDF links
+
         other_links = filter(lambda x: not x.endswith(".pdf"), page_urls)
         for page in other_links:
             time.sleep(throttle)
@@ -67,7 +73,8 @@ class Site:
         # Return path to metadata file for downstream use
         return outfile
 
-    def _process_detail_page(self, local_page) -> List[MetadataDict]:
+#    def _process_detail_page(self, local_page) -> List[MetadataDict]:
+    def _process_detail_page(self, local_page) -> List:     # HEY! Fix   
         """Extract links to files such as videos from a detail page and write to JSON file."""
         metadata = []
         # Process child page HTML files in index page folders,
@@ -75,24 +82,18 @@ class Site:
         html = self.cache.read(local_page)
         soup = BeautifulSoup(html, "html.parser")
         # Find the title of the page
-        title = soup.find("h1").text.strip()
+        title = soup.find("h1")
+        if isinstance(title.text, str):      # I hate mypy so very much
+            title = title.text.strip()
 
         pageguts = soup.find("div", attrs={"class": "page-content"})
 
-        # Find all the videos, photos, etc. on the page *and* construct the *relative* path for the
-        # files, e.g. "ca_ventura_county_sheriff/2019-ois-201906219/photo1.jpg" -> QUESTION FOR SERDAR:
-        # should that be part of this function or should it be done in the _process_pdf/_process_youtube etc
-        # functions?
-
         links = pageguts.find_all("a")
-        #  Filter for PDF and YouTube links
-        #  TODO: call separate functions for different link types with an if/elif/else block
         for link in links:
             if (
                 link["href"][-1] == "/"
             ):  # If this is a link to a landing page, it's not an asset
                 pass
-                # print(f"Dropping {link}")
             else:
                 for link in links:
                     if (
@@ -103,11 +104,12 @@ class Site:
                     else:
                         line = {}
                         line["asset_url"] = link["href"]
+                        line["name"] = ""
                         if "youtu.be" in link["href"]:
-                            line["name"] = (
-                                link.find_all("span")[-1].text.strip() + ".mp4"
-                            )
-                            # HEY! Waiting to hear on whether to add extension
+                            try:
+                                line["name"] = link.find_all("span")[-1].text.strip()
+                            except:
+                                pass
                         else:
                             line["name"] = link["href"].split("/")[-1]
 
@@ -119,50 +121,6 @@ class Site:
                         line["details"] = {}
                         metadata.append(line)
         return metadata
-
-    # Functions to work with each type of file: pdf, youtube and audio:
-
-    def _process_youtube(self, link) -> MetadataDict:
-        """Example:
-        {
-            "title": title,
-            "parent_page": str(html_file),
-            "asset_url": href.replace("\n", ""),
-            "name": link.text.strip().replace("\n", ""),
-        }
-        Returns MetadataDict to be pushed to metadata List
-        """
-        metadata_list = []
-        # QUESTION FOR SERDAR: Is this the right approach?
-        for link in links:
-            href = link.get("href", "")
-            if href.endswith("youtu.be") or "youtube.com" in href:
-                payload = {
-                    "title": title,
-                    "parent_page": str(html_file),
-                    "asset_url": href.replace("\n", ""),
-                    "name": link.text.strip().replace("\n", ""),
-                }
-                metadata_list.append(payload)
-        pass
-
-    def _process_pdf(self, link) -> MetadataDict:
-        metadata_list = []
-        for link in links:
-            href = link.get("href", "")
-            if href.endswith(".pdf"):
-                payload = {
-                    "title": title,
-                    "parent_page": str(html_file),
-                    "asset_url": href.replace("\n", ""),
-                    "name": link.text.strip().replace("\n", ""),
-                }
-                metadata_list.append(payload)
-        pass
-
-    # TODO: The audio files are hard coded, need to figure out how to get the audio links:
-    def _process_audio(self, link) -> MetadataDict:
-        pass
 
     # Helper/Private Methods
     def _get_detail_page_links(self, target_url):
