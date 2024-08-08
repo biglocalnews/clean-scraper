@@ -28,9 +28,13 @@ class Site:
             f"{self.base_url}/sb1421/officer-involved-shooting-ois/",
             f"{self.base_url}/sb1421/use-of-force-great-bodily-injury-cases-gbi/",
         ]
+
+        # HEY! Need to build out dirs with appropriate slug structure
+        # Need to add detail dir
+
+        self.cache = Cache(cache_dir)  # ~/.clean-scraper/cache/
         self.data_dir = data_dir
         self.cache_dir = cache_dir
-        self.cache = Cache(cache_dir)  # ~/.clean-scraper/cache/
         # Use module path to construct agency slug, which we'll use downstream
         mod = Path(__file__)
         state_postal = mod.parent.stem
@@ -59,7 +63,7 @@ class Site:
         # TODO: Write out the metadata JSON
         # Store the metadata in a JSON file in the data directory
         outfile = self.data_dir.joinpath(f"{self.agency_slug}.json")
-        self.cache.write_json(outfile, metadata)
+        # HEY! self.cache.write_json(outfile, metadata)
         # Return path to metadata file for downstream use
         return outfile
 
@@ -73,25 +77,47 @@ class Site:
         # Find the title of the page
         title = soup.find("h1").text.strip()
 
+        pageguts = soup.find("div", attrs={"class": "page-content"})
+
         # Find all the videos, photos, etc. on the page *and* construct the *relative* path for the
         # files, e.g. "ca_ventura_county_sheriff/2019-ois-201906219/photo1.jpg" -> QUESTION FOR SERDAR:
         # should that be part of this function or should it be done in the _process_pdf/_process_youtube etc
         # functions?
 
-        links = soup.find_all("a")
+        links = pageguts.find_all("a")
         #  Filter for PDF and YouTube links
         #  TODO: call separate functions for different link types with an if/elif/else block
         for link in links:
-            href = link.get("href", "")
-            if href.endswith(".pdf") in href:
-                payload = self._process_pdf(link, title, local_page)
-            elif "youtu.be" in href or "youtube.com" in href:
-                payload = self._process_youtube(link, title, local_page)
-            elif ".mp3" in href:
-                payload = self._process_audio(link, title, local_page)
+            if (
+                link["href"][-1] == "/"
+            ):  # If this is a link to a landing page, it's not an asset
+                pass
+                # print(f"Dropping {link}")
+            else:
+                for link in links:
+                    if (
+                        link["href"][-1] == "/"
+                    ):  # If this is a link to a landing page, it's not an asset
+                        pass
+                        # print(f"Dropping {link}")
+                    else:
+                        line = {}
+                        line["asset_url"] = link["href"]
+                        if "youtu.be" in link["href"]:
+                            line["name"] = (
+                                link.find_all("span")[-1].text.strip() + ".mp4"
+                            )
+                            # HEY! Waiting to hear on whether to add extension
+                        else:
+                            line["name"] = link["href"].split("/")[-1]
 
-            metadata.append(payload)
+                        # HEY! Need to build out name prefix including subdir
 
+                        line["parent_page"] = local_page
+                        line["title"] = link.find_all("span")[-1].text.strip()
+                        line["case_id"] = title
+                        line["details"] = {}
+                        metadata.append(line)
         return metadata
 
     # Functions to work with each type of file: pdf, youtube and audio:
@@ -144,6 +170,7 @@ class Site:
         full_local_path = self._download_page(target_url)
         # Grab the path relative to the cache (~/.clean-scraper/cache)
         # e.g. ca_ventura_county_sheriff/somefilename.html
+
         cache_path_relative = str(full_local_path).split("cache/")[-1]
         # Read the HTML from the cached version of the index page
         html = self.cache.read(cache_path_relative)
@@ -173,6 +200,10 @@ class Site:
         Returns:
             Local path of downloaded file
         """
+
+        # HEY! Bring into better file structure, sub pages into subpage dir
+        # If page already exists, don't download unless overwrite flag is true
+
         file_stem = url.rstrip("/").split("/")[-1]
         base_file = f"{self.agency_slug}/{file_stem}.html"
         # Download the page (if it's not already cached)
