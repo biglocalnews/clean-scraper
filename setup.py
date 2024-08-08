@@ -9,7 +9,7 @@ def read(file_name):
     """Read the provided file."""
     this_dir = os.path.dirname(__file__)
     file_path = os.path.join(this_dir, file_name)
-    with open(file_path) as f:
+    with open(file_path, encoding="utf-8") as f:
         return f.read()
 
 
@@ -58,14 +58,34 @@ setup(
         clean-scraper=clean.cli:cli
     """,
     install_requires=[
-        "click",
-        "bs4",
-        "html5lib",
-        "pdfplumber",
-        "requests",
-        "tenacity",
-        "retry",
-        "us",
+        "beautifulsoup4==4.12.3",
+        "bs4==0.0.2",
+        "certifi==2024.7.4",
+        "cffi==1.16.0",
+        "charset-normalizer==3.3.2",
+        "clean-scraper",
+        "click==8.1.7",
+        "cryptography==43.0.0",
+        "decorator==5.1.1",
+        "html5lib==1.1",
+        "idna==3.7",
+        "jellyfish==1.1.0",
+        "pdfminer.six==20231228",
+        "pdfplumber==0.11.2",
+        "pillow==10.4.0",
+        "py==1.11.0",
+        "pycparser==2.22",
+        "pypdfium2==4.30.0",
+        "pytube==15.0.0",
+        "requests==2.32.3",
+        "retry==0.9.2",
+        "six==1.16.0",
+        "soupsieve==2.5",
+        "tenacity==9.0.0",
+        "typing-extensions==4.12.2",
+        "urllib3==1.26.18",
+        "us==3.2.0",
+        "webencodings==0.5.1",
     ],
     license="Apache 2.0 license",
     zip_safe=False,
