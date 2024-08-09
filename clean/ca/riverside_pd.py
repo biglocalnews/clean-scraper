@@ -103,7 +103,7 @@ class Site:
         return dl_assets
 
     def _make_download_path(self, asset):
-        folder_name = asset["case_number"]
+        folder_name = asset["case_num"]
         name = asset["name"]
         outfile = f"{folder_name}/{name}"
         dl_path = Path(self.agency_slug, "assets", outfile)
