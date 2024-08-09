@@ -169,7 +169,7 @@ The file should be saved to the cache folder's `exports/` directory. In the case
 The metadata file should contain an array of one or more objects with the below attributes:
 
 - **required** `asset_url`: The URL where a file can be downloaded.
-- `case_number`: A string to associate the asset with a specific incident
+- `case_id`: A string to associate the asset with a specific incident
 - `name`: The base name of the file, minus prior path components.
 - `parent_page`: The local file path in cache to the HTML page containing the `asset_url`.
 - `title`: (optional) If available, this will typically be a human-friendly title for the file.
@@ -191,7 +191,7 @@ Below is an example from `ca_san_diego_pd.json` metadata JSON.
         "name": "November 21, 2022 IA #2022-013_Audio_Interview Complainant_Redacted_KM.wav",
         "parent_page": "/ca_san_diego_pd/sb16-sb1421-ab748/11-21-2022_IA_2022-013.html",
         "title": "11-21-2022 IA 2022-013",
-        "case_num": "abc123",
+        "case_id": "abc123",
         "details": {
             "filesize": 9999,
             "date_modified": "2024-01-01T19:20:00+1:00"
