@@ -7,7 +7,7 @@ from bs4 import BeautifulSoup
 
 from .. import utils
 from ..cache import Cache
-from .config.monterey_county_district_attorney import (
+from ..config.monterey_county_district_attorney import (
     download_request_headers,
     index_request_headers,
 )
