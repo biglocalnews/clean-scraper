@@ -17,7 +17,7 @@ class Site:
         name (str): The official name of the agency
     """
 
-    name = "Santa Rosa Police"
+    name = "Corona Police Department."
 
     def __init__(
         self,
@@ -41,10 +41,10 @@ class Site:
         # Use module path to construct agency slug, which we'll use downstream
         mod = Path(__file__)
         state_postal = mod.parent.stem
-        return f"{state_postal}_{mod.stem}"  # ca_santa_rosa
+        return f"{state_postal}_{mod.stem}"  # ca_corona_pd
 
     def scrape_meta(self, throttle=0):
-        # construct a local filename relative to the cache directory - agency slug + page url (ca_santa_rosa/3201.html)
+        # construct a local filename relative to the cache directory - agency slug + page url (ca_corona_pd/trust-and-transparency.html)
         # download the page (if not already cached)
         # save the index page url to cache (sensible name)
         base_name = f"{self.base_url.split('/')[-1].split('#')[0]}.html"
