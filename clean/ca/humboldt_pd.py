@@ -92,7 +92,7 @@ class Site:
                             name = link.string
                             payload = {
                                 "title": title,
-                                "case_number": name,
+                                "case_id": name,
                                 "parent_page": str(parent_page),
                                 "asset_url": f"{'https://humboldtgov.org'}{href}",
                                 "name": name,
@@ -107,12 +107,12 @@ class Site:
                         if soup.title and isinstance(soup.title.string, str)
                         else None
                     )
-                    case_number = page["page_name"].split("/")[-1].split("_")[0]
+                    case_id = page["page_name"].split("/")[-1].split("_")[0]
                     header = soup.find("h1")
                     name = header.get_text(strip=True) if header else None
                     payload = {
                         "title": title,
-                        "case_number": case_number,
+                        "case_id": case_id,
                         "parent_page": str(parent_page),
                         "download_page": str(page["page_name"]),
                         "asset_url": f"https://humboldtgov.nextrequest.com{link['href']}",
@@ -122,7 +122,7 @@ class Site:
         return metadata
 
     def _make_download_path(self, asset):
-        folder_name = asset["case_number"]
+        folder_name = asset["case_id"]
         name = asset["name"]
         # If name has has no extension mark it as pdf as its a document format by meta-data
         if len(name.split(".")) == 1:
