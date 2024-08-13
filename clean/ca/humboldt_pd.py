@@ -1,6 +1,5 @@
 import time
 from pathlib import Path
-from typing import List
 
 from bs4 import BeautifulSoup, Tag
 
@@ -121,18 +120,6 @@ class Site:
                     }
                     metadata.append(payload)
         return metadata
-
-    def scrape(self, throttle: int = 4, filter: str = "") -> List[Path]:
-        metadata = self.cache.read_json(
-            self.data_dir.joinpath(f"{self.agency_slug}.json")
-        )
-        dl_assets = []
-        for asset in metadata:
-            url = asset["asset_url"]
-            dl_path = self._make_download_path(asset)
-            time.sleep(throttle)
-            dl_assets.append(self.cache.download(str(dl_path), url))
-        return dl_assets
 
     def _make_download_path(self, asset):
         folder_name = asset["case_number"]
