@@ -1,13 +1,12 @@
 import re
 import time
 from pathlib import Path
-from typing import List
 
 from bs4 import BeautifulSoup
 
 from .. import utils
 from ..cache import Cache
-from ..config.corona_pd import download_request_headers, index_request_headers
+from ..config.corona_pd import index_request_headers
 
 
 class Site:
@@ -71,11 +70,10 @@ class Site:
                 )
                 if "youtube" not in asset_url and "coronaca.gov" not in asset_url:
                     asset_url = f"https://www.coronaca.gov{asset_url}"
-                print(title)
                 asset_url = asset_url.strip()
                 payload = {
                     "asset_url": asset_url,
-                    "case_num": case_num,
+                    "case_id": case_num,
                     "name": name,
                     "title": title,
                     "parent_page": str(filename),
@@ -85,30 +83,6 @@ class Site:
         outfile = self.data_dir.joinpath(f"{self.agency_slug}.json")
         self.cache.write_json(outfile, metadata)
         return outfile
-
-    def scrape(self, throttle: int = 4, filter: str = "") -> List[Path]:
-        metadata = self.cache.read_json(
-            self.data_dir.joinpath(f"{self.agency_slug}.json")
-        )
-        dl_assets = []
-        for asset in metadata:
-            url = asset["asset_url"]
-            dl_path = self._make_download_path(asset)
-            time.sleep(throttle)
-            dl_assets.append(
-                self.cache.download(str(dl_path), url, headers=download_request_headers)
-            )
-        return dl_assets
-
-    def _make_download_path(self, asset):
-        name = asset["name"]
-        folder_name = asset["case_num"]
-        if "showpublisheddocument" in asset["asset_url"]:
-            outfile = f"{folder_name}/{name}.pdf"
-        else:
-            outfile = f"{folder_name}/{name}.mp4"
-        dl_path = Path(self.agency_slug, "assets", outfile)
-        return dl_path
 
     def _get_clean_case_num(self, element):
         parent_tag = element.find_parent(["p", "td"])
