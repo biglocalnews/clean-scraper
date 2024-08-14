@@ -1,16 +1,12 @@
 import re
 import time
 from pathlib import Path
-from typing import List
 
 from bs4 import BeautifulSoup
 
 from .. import utils
 from ..cache import Cache
-from ..config.monterey_county_district_attorney import (
-    download_request_headers,
-    index_request_headers,
-)
+from ..config.monterey_county_district_attorney import index_request_headers
 
 
 class Site:
@@ -81,10 +77,10 @@ class Site:
             name = name_match.group(1) if name_match else None
             # Extract case number
             case_match = case_pattern.search(td_text)
-            case_number = case_match.group(1) if case_match else None
+            case_number = case_match.group(1) if case_match else title
             payload = {
                 "asset_url": link["href"],
-                "case_num": case_number,
+                "case_id": case_number,
                 "name": name,
                 "title": title,
                 "parent_page": str(filename),
@@ -95,24 +91,3 @@ class Site:
         outfile = self.data_dir.joinpath(f"{self.agency_slug}.json")
         self.cache.write_json(outfile, metadata)
         return outfile
-
-    def scrape(self, throttle: int = 4, filter: str = "") -> List[Path]:
-        metadata = self.cache.read_json(
-            self.data_dir.joinpath(f"{self.agency_slug}.json")
-        )
-        dl_assets = []
-        for asset in metadata:
-            url = asset["asset_url"]
-            dl_path = self._make_download_path(asset)
-            time.sleep(throttle)
-            dl_assets.append(
-                self.cache.download(str(dl_path), url, headers=download_request_headers)
-            )
-        return dl_assets
-
-    def _make_download_path(self, asset):
-        name = asset["name"]
-        year = asset["details"]["year"]
-        outfile = f"{year}/{name}.pdf"
-        dl_path = Path(self.agency_slug, "assets", outfile)
-        return dl_path
