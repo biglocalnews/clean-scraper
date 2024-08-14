@@ -65,10 +65,8 @@ class Site:
                 name = link.string
                 title_element = link.find_previous("div", class_="title")
                 title = title_element.string
-                asset_url = link["href"].replace(
-                    "youtu.be/", "www.youtube.com/watch?v="
-                )
-                if "youtube" not in asset_url and "coronaca.gov" not in asset_url:
+                asset_url = link["href"]
+                if "youtu" not in asset_url and "coronaca.gov" not in asset_url:
                     asset_url = f"https://www.coronaca.gov{asset_url}"
                 asset_url = asset_url.strip()
                 payload = {
