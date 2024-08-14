@@ -199,7 +199,7 @@ class Site:
                 line["name"] = asset["Name"]
                 line["parent_page"] = str(sourcefile).replace("\\", "/").split("/")[-1]
                 line["title"] = asset["Name"]
-                line["case_num"] = caseindex[recordid]["case_number"]
+                line["case_id"] = caseindex[recordid]["case_number"]
                 line["details"] = {}
                 line["details"]["filesize"] = asset["FileSize"]
                 line["details"]["date_modified"] = asset["ModifiedOnDisplay"]
