@@ -1,7 +1,6 @@
 import time
 import urllib.parse
 from pathlib import Path
-from typing import List
 
 from bs4 import BeautifulSoup
 
@@ -77,7 +76,7 @@ class Site:
                         name = urllib.parse.unquote(name)
                         payload = {
                             "asset_url": link_href,
-                            "case_num": case_id,
+                            "case_id": case_id,
                             "name": name,
                             "title": title,
                             "parent_page": str(filename),
@@ -88,23 +87,3 @@ class Site:
         outfile = self.data_dir.joinpath(f"{self.agency_slug}.json")
         self.cache.write_json(outfile, metadata)
         return outfile
-
-    def scrape(self, throttle: int = 4, filter: str = "") -> List[Path]:
-        metadata = self.cache.read_json(
-            self.data_dir.joinpath(f"{self.agency_slug}.json")
-        )
-        dl_assets = []
-        for asset in metadata:
-            print("downloading...: ", asset["name"])
-            url = asset["asset_url"]
-            dl_path = self._make_download_path(asset)
-            time.sleep(throttle)
-            dl_assets.append(self.cache.download(str(dl_path), url))
-        return dl_assets
-
-    def _make_download_path(self, asset):
-        folder_name = asset["case_num"]
-        name = asset["name"]
-        outfile = f"{folder_name}/{name}"
-        dl_path = Path(self.agency_slug, "assets", outfile)
-        return dl_path
