@@ -1,7 +1,6 @@
-import json
+import re
 import time
 from pathlib import Path
-from typing import List
 
 from .. import utils
 from ..cache import Cache
@@ -89,96 +88,95 @@ class Site:
                 self.cache.write_json(output_json, r.json())
                 output_dict = {"fileName": filename, "filePath": output_json}
                 local_index_json.append(output_dict)
+            time.sleep(throttle)
         for download_json_path in local_index_json:
             download_dict = self.cache.read_json(download_json_path["filePath"])
             results = download_dict.get("data", {}).get("results", [])
             title = download_dict.get("data", {}).get("name", "")
+            case_id = self._get_case_id(title)
             for result in results:
-                payload = {
-                    "title": title,
-                    "parent_page": str(download_json_path["fileName"]),
-                    "asset_id": result.get("entryId"),
-                    "name": result.get("name"),
-                }
-                metadata.append(payload)
+                if result.get("type") == -2 and result.get("mediaHandlerUrl") is None:
+                    payload = {
+                        "title": title,
+                        "parent_page": str(download_json_path["fileName"]),
+                        "case_id": case_id,
+                        "asset_url": f"https://portal.laserfiche.com/Portal/DocView.aspx?id={result.get('entryId')}&repo=r-3261686e",
+                        "name": result.get("name"),
+                        "details": {"extension": result.get("extension", None)},
+                    }
+                    metadata.append(payload)
+                elif (
+                    result.get("type") == -2
+                    and result.get("mediaHandlerUrl") is not None
+                ):
+                    payload = {
+                        "title": title,
+                        "parent_page": str(download_json_path["fileName"]),
+                        "asset_url": f'https://portal.laserfiche.com/Portal/{result.get("mediaHandlerUrl").replace("/u0026", "&")}',
+                        "name": result.get("name"),
+                        "details": {"extension": result.get("extension", None)},
+                    }
+                    metadata.append(payload)
+                elif result.get("type") == 0:
+                    childMetadata_list = self._get_child_pages(
+                        result, download_json_path["fileName"], title
+                    )
+                    for payload in childMetadata_list:
+                        metadata.append(payload)
+
         outfile = self.data_dir.joinpath(f"{self.agency_slug}.json")
         self.cache.write_json(outfile, metadata)
         return outfile
 
-    def scrape(self, throttle: int = 4, filter: str = "") -> List[Path]:
-        metadata = self.cache.read_json(
-            self.data_dir.joinpath(f"{self.agency_slug}.json")
-        )
-        dl_assets = []
-        for asset in metadata:
-            data_id = asset["asset_id"]
-            print("Downloading document id", data_id)
-            ids_list = self.start_export_payload.get("ids")
-            if not isinstance(ids_list, list):
-                ids_list = [str(data_id)]
-                self.start_export_payload["ids"] = ids_list
-            else:
-                ids_list = [str(data_id)]
-                self.start_export_payload["ids"] = ids_list
-            page_url = f"https://portal.laserfiche.com/Portal/Browse.aspx?id={data_id}&repo=r-3261686e"
-            cookies = utils.get_cookies(page_url)
-            with utils.post_url(
-                self.start_export_url,
-                user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36",
-                cookies=cookies,
-                json=self.start_export_payload,
-            ) as r:
-                start_dict = json.loads(r.text)
-                export_token = {
-                    "token": start_dict.get("data").get("token"),
-                }
-                while True:
-                    with utils.post_url(
-                        self.check_export_status_url,
-                        user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36",
-                        cookies=cookies,
-                        json=export_token,
-                    ) as r:
-                        check_status = json.loads(r.text)
-                        print("check_status: ", check_status)
-                        if check_status.get("data").get("finished"):
-                            print("Export Finished")
-                            time.sleep(1)
-                            break
-                exported_url = (
-                    f"{self.download_exported_url}?token={export_token['token']}"
-                )
-                with utils.get_url(
-                    exported_url,
-                    user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36",
-                    cookies=cookies,
-                ) as r:
-                    extension = self._get_file_extension(r)
-                    name = self._make_download_path(asset=asset, extension=extension)
-                    local_path = Path(self.cache_dir, name)
-                    local_path.parent.mkdir(parents=True, exist_ok=True)
-                    if self.cache.exists(name=name):
-                        dl_assets.append(local_path)
-                        continue
-                    r.encoding = "utf-8"
-                    # Write out the file in little chunks
-                    with open(local_path, "wb") as f:
-                        for chunk in r.iter_content(chunk_size=8192):
-                            f.write(chunk)
-                        dl_assets.append(local_path)
-        return dl_assets
+    def _get_child_pages(self, result, parent_path, parent_title):
+        childMetadata = []
+        self.folder_request_body["folderId"] = result.get("entryId")
+        filename = f"{str(parent_path).split('.json')[0]}/{result.get('name')}.json"
+        output_json = self.cache_dir.joinpath(filename)
+        with utils.post_url(self.folder_url, json=self.folder_request_body) as r:
+            self.cache.write_json(output_json, r.json())
+            output_dict = {"fileName": filename, "filePath": output_json}
+            download_dict = self.cache.read_json(output_dict["filePath"])
+            results = download_dict.get("data", {}).get("results", [])
+            case_id = self._get_case_id(parent_title)
+            for result in results:
+                if result.get("type") == -2 and result.get("mediaHandlerUrl") is None:
+                    payload = {
+                        "title": parent_title,
+                        "parent_page": str(filename),
+                        "case_id": case_id,
+                        "asset_url": f"https://portal.laserfiche.com/Portal/DocView.aspx?id={result.get('entryId')}&repo=r-3261686e",
+                        "name": result.get("name"),
+                        "details": {"extension": result.get("extension", None)},
+                    }
+                    childMetadata.append(payload)
+                elif (
+                    result.get("type") == -2
+                    and result.get("mediaHandlerUrl") is not None
+                ):
+                    payload = {
+                        "title": parent_title,
+                        "parent_page": str(filename),
+                        "case_id": case_id,
+                        "asset_url": f'https://portal.laserfiche.com/Portal/{result.get("mediaHandlerUrl").replace("/u0026", "&")}',
+                        "name": result.get("name"),
+                        "details": {"extension": result.get("extension", None)},
+                    }
+                    childMetadata.append(payload)
+                else:
+                    childMetadata_list = self._get_child_pages(
+                        result, filename, parent_title
+                    )
 
-    def _make_download_path(self, asset, extension):
-        folder_name = asset["title"]
-        name = asset["name"]
-        name = f"{name}.{extension}"
-        outfile = f"{folder_name}/{name}"
-        dl_path = Path(self.agency_slug, "assets", outfile)
-        print(dl_path)
-        return dl_path
+                    for payload in childMetadata_list:
+                        childMetadata.append(payload)
 
-    def _get_file_extension(self, response):
-        print("file Name: ", response.headers.get("Content-Disposition", ""))
-        extension = response.headers.get("Content-Disposition", "").split(".")[-1]
-        extension = extension.replace('"', "")
-        return extension
+        return childMetadata
+
+    def _get_case_id(self, title):
+        case_id_pattern = r"\b(FPD# \d{2,5}-\d{3,5}|FN# \d{2}-\d{4})\b"
+        case_ids = re.findall(case_id_pattern, title)
+        if len(case_ids) > 0:
+            return case_ids[0]
+        else:
+            return title
