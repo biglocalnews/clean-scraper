@@ -115,7 +115,7 @@ class Cache:
             logger.debug(f"File found in cache: {local_path}")
             return local_path
 
-        if "youtube" in url:
+        if "youtube" in url or "youtu.be" in url:
             logger.debug("Detected Youtube URL")
             url_queue = get_youtube_url(url)
 
