@@ -318,18 +318,18 @@ git commit -am "Describe your work here"
 git push -u origin your-branch-name
 ```
 
-If there have been significant changes to the `main` branch since you started work, you should consider integrating those edits to your branch since any differences will need to be reconciled before your code can be merged.
+If there have been significant changes to the `dev` branch since you started work, you should consider integrating those edits to your branch since any differences will need to be reconciled before your code can be merged.
 
 ``` bash
-# Checkout and pull updates on main
-git checkout main
+# Checkout and pull updates on dev
+git checkout dev
 git pull
 
 # Checkout your branch again
 git checkout your-branch-name
 
-# Rebase your changes on top of main
-git rebase main
+# Rebase your changes on top of dev
+git rebase dev
 ```
 
 If any [code conflicts](https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/addressing-merge-conflicts/about-merge-conflicts) arise, you can open the listed files and seek to reconcile them
