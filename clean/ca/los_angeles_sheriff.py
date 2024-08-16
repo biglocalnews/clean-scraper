@@ -58,11 +58,11 @@ class Site:
         )
         targetfilename = f"{self.siteslug}/index.json"
         self.cache.write_binary(targetfilename, r.content)
-        # HEY!
+        # FIXME:
         #        with open(self.cache_dir / (self.siteslug + "/index.json"), "wb") as outfile:
         #            outfile.write(r.content)
         rawindex = self.cache.read_json(self.cache_dir / targetfilename)
-        # HEY! #70 implementation affects above
+        # TODO: #70 implementation affects above
         if rawindex["MoreRecords"] or len(rawindex["Records"]) != rawindex["ItemCount"]:
             logger.error("Index JSON is incomplete or broken.")
         else:
@@ -83,7 +83,7 @@ class Site:
         partfilename = self.siteslug + "/timestamplog.json"
         fullfilename = self.cache_dir / partfilename
         if self.cache.exists(partfilename):
-            # Hey! Waiting on #70 fix
+            # TODO: Waiting on #70 fix
             # oldtimestamps = self.cache.read_json(filename)
             oldtimestamps = self.cache.read_json(fullfilename)
         else:
@@ -92,7 +92,7 @@ class Site:
 
     def _save_timestamps(self, indextimestamps):
         targetfilename = self.siteslug + "/timestamplog.json"
-        # Hey! Waiting on #70 fix
+        # TODO: Waiting on #70 fix
         self.cache.write_json(self.cache_dir / targetfilename, indextimestamps)
         return
 
@@ -189,7 +189,7 @@ class Site:
         assetlist = []
         recordsdownloaded = self._build_detail_file_list()
         for recordid in recordsdownloaded:
-            # Hey! #70 fix
+            # TODO: #70 fix
             # sourcefile = f"{self.siteslug}/subpages/{recordid}.json"
             sourcefile = self.cache_dir / f"{self.siteslug}/subpages/{recordid}.json"
             localjson = self.cache.read_json(sourcefile)
@@ -221,7 +221,7 @@ class Site:
     def _save_assetlist(self, assetlist):
         targetfilename = self.data_dir / (self.siteslug + ".json")
         logger.debug(f"Saving asset list to {targetfilename}")
-        # Hey! #70 fix
+        # TODO: #70 fix
         # self.cache.write_json(targetfilename, assetlist)
         self.cache.write_json(self.cache_dir / targetfilename, assetlist)
         return targetfilename
