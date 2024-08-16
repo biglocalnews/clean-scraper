@@ -38,7 +38,6 @@ class MetadataDict(TypedDict):
     details: NotRequired[dict]
 
 
-
 def create_directory(path: Path, is_file: bool = False):
     """Create the filesystem directories for the provided Path objects.
 
