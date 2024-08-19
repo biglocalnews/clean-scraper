@@ -163,13 +163,21 @@ def get_all_scrapers():
     abbrevs = [state.abbr.lower() for state in us.states.STATES]
     state_folders = [p for p in folders if p.stem in abbrevs]
     scrapers = {}
+    unwanted_files = [
+        ".mypy_cache",
+        "config",
+    ]
+
     for state_folder in state_folders:
         state = state_folder.stem
         for mod_path in state_folder.iterdir():
-            if not mod_path.stem.startswith("__"):
+            if not (mod_path.stem.startswith("__") or mod_path.stem in unwanted_files):
                 agency_mod = importlib.import_module(f"clean.{state}.{mod_path.stem}")
                 scrapers.setdefault(state, []).append(
-                    {"slug": f"{state}_{mod_path.stem}", "agency": agency_mod.Site.name}
+                    {
+                        "slug": f"{state}_{mod_path.stem}",
+                        "agency": agency_mod.Site.name,
+                    }
                 )
     return scrapers
 
