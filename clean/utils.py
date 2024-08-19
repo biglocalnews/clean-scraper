@@ -167,10 +167,16 @@ def get_all_scrapers():
         state = state_folder.stem
         for mod_path in state_folder.iterdir():
             if not mod_path.stem.startswith("__"):
-                agency_mod = importlib.import_module(f"clean.{state}.{mod_path.stem}")
-                scrapers.setdefault(state, []).append(
-                    {"slug": f"{state}_{mod_path.stem}", "agency": agency_mod.Site.name}
-                )
+                if mod_path.stem not in [".mypy_cache", "config"]:
+                    agency_mod = importlib.import_module(
+                        f"clean.{state}.{mod_path.stem}"
+                    )
+                    scrapers.setdefault(state, []).append(
+                        {
+                            "slug": f"{state}_{mod_path.stem}",
+                            "agency": agency_mod.Site.name,
+                        }
+                    )
     return scrapers
 
 
