@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "c46af40e9002e99c2d886712e78211bdfdae47782794d0fa58996cbb5bfc4f03"
+            "sha256": "61469f9d9ee7445fe668758abeb948f0c610f86f010f96464a85a6513691ce97"
         },
         "pipfile-spec": 6,
         "requires": {},
@@ -893,11 +893,11 @@
         },
         "importlib-metadata": {
             "hashes": [
-                "sha256:11901fa0c2f97919b288679932bb64febaeacf289d18ac84dd68cb2e74213369",
-                "sha256:72e8d4399996132204f9a16dcc751af254a48f8d1b20b9ff0f98d4a8f901e73d"
+                "sha256:42817a4a0be5845d22c6e212db66a94ad261e2318d80b3e0d363894a79df2b67",
+                "sha256:9c8fa6e8ea0f9516ad5c8db9246a731c948193c7754d3babb0114a05b27dd364"
             ],
             "markers": "python_version >= '3.8'",
-            "version": "==8.2.0"
+            "version": "==8.3.0"
         },
         "iniconfig": {
             "hashes": [
@@ -1391,6 +1391,22 @@
             "markers": "python_version >= '3.8'",
             "version": "==5.0.0"
         },
+        "pytest-stub": {
+            "hashes": [
+                "sha256:276043d91cbad863ba56b99f6b781a4a1bc19e1d2e928a5f8e76979ee02c8099",
+                "sha256:5de0e3247f8e51321c4dc6d94bbe53c8a96a51edcf722d3df3cb20d4d32b27d7"
+            ],
+            "index": "pypi",
+            "version": "==1.1.0"
+        },
+        "pytest-sugar": {
+            "hashes": [
+                "sha256:6422e83258f5b0c04ce7c632176c7732cab5fdb909cb39cca5c9139f81276c0a",
+                "sha256:70ebcd8fc5795dc457ff8b69d266a4e2e8a74ae0c3edc749381c64b5246c8dfd"
+            ],
+            "index": "pypi",
+            "version": "==1.0.0"
+        },
         "pytest-vcr": {
             "hashes": [
                 "sha256:23ee51b75abbcc43d926272773aae4f39f93aceb75ed56852d0bf618f92e1896",
@@ -1522,6 +1538,14 @@
                 "sha256:c8e1716e83cc398ae16824e5572ae04e0d9fc2c6b985fb0f900f5f0c96ecba1a"
             ],
             "version": "==2.2.0"
+        },
+        "termcolor": {
+            "hashes": [
+                "sha256:9297c0df9c99445c2412e832e882a7884038a25617c60cea2ad69488d4040d63",
+                "sha256:aab9e56047c8ac41ed798fa36d892a37aca6b3e9159f3e0c24bc64a9b3ac7b7a"
+            ],
+            "markers": "python_version >= '3.8'",
+            "version": "==2.4.0"
         },
         "twine": {
             "hashes": [

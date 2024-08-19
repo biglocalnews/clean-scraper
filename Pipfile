@@ -25,6 +25,8 @@ types-openpyxl = "*"
 blacken-docs = "*"
 exceptiongroup = "*"
 pytest-cov = "*"
+pytest-sugar = "*"
+pytest-stub = "*"
 
 [packages]
 beautifulsoup4 = "*"
