@@ -63,8 +63,8 @@ PIPENV := pipenv run
 PYTHON := $(PIPENV) python -W ignore
 
 define python
-    @echo "🐍🤖 $(OBJ_COLOR)Executing Python script $(1)$(NO_COLOR)\r";
-    @$(PYTHON) $(1)
+	@echo "🐍🤖 $(OBJ_COLOR)Executing Python script $(1)$(NO_COLOR)\r";
+	@$(PYTHON) $(1)
 endef
 
 #
@@ -72,7 +72,7 @@ endef
 #
 
 run: ## run a scraper. example: `make run agency=ca_san_diego_pd`
-	$(call banner,        🔪 Scraping data 🔪)
+	$(call banner,		🔪 Scraping data 🔪)
 	$(PIPENV) python -m clean.cli $(scraper) -l DEBUG
 
 
@@ -81,21 +81,22 @@ run: ## run a scraper. example: `make run agency=ca_san_diego_pd`
 #
 
 lint: ## run the linter
-	$(call banner,        💅 Linting code 💅)
+	$(call banner,		💅 Linting code 💅)
 	@$(PIPENV) flake8 -v ./
 
 
 mypy: ## run mypy type checks
-	$(call banner,        🔩 Running mypy 🔩)
+	$(call banner,		🔩 Running mypy 🔩)
 	@$(PIPENV) mypy ./clean --ignore-missing-imports
 
 
 test: ## run all tests
-	$(call banner,       🤖 Running tests 🤖)
-	@$(PIPENV) pytest --cov=.
+	$(call banner,		🤖 Running tests 🤖)
+	@$(PIPENV) pytest --cov=. --cov-report=term-missing
 
 
 coverage: ## check code coverage
+	$(call banner,		📊 Checking coverage 📊)
 	@$(PIPENV) coverage report -m
 
 #
@@ -103,12 +104,12 @@ coverage: ## check code coverage
 #
 
 check-release: ## check release for potential errors
-	$(call banner,      🔎 Checking release 🔎)
+	$(call banner,		🔎 Checking release 🔎)
 	@$(PIPENV) twine check dist/*
 
 
 build-release: ## builds source and wheel package
-	$(call banner,      📦 Building release 📦)
+	$(call banner,		📦 Building release 📦)
 	@$(PYTHON) setup.py sdist
 	@$(PYTHON) setup.py bdist_wheel
 	@ls -l dist
@@ -117,7 +118,7 @@ build-release: ## builds source and wheel package
 #
 
 format: ## Run and apply all pre-commit hooks (black, etc)
-	$(call banner,       🪥 Cleaning code 🪥)
+	$(call banner,		🪥 Cleaning code 🪥)
 	@$(PIPENV) pre-commit run --all-files
 
 
@@ -127,14 +128,14 @@ help: ## Show this help. Example: make help
 
 # Mark all the commands that don't have a target
 .PHONY: help \
-        build-release \
-        check-release \
-        coverage \
-        dist \
-        format \
-        lint \
-        mypy \
-        release \
-        run \
-        test \
-        test-release
+		build-release \
+		check-release \
+		coverage \
+		dist \
+		format \
+		lint \
+		mypy \
+		release \
+		run \
+		test \
+		test-release
