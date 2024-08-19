@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 
 class Site:
     """
-    Scrape file metadata and download files for the Sacramento Police Department for SB16/SB1421/AB748 data.
+    Scrape file metadata and asset_urls for the Sacramento Police Department for SB16/SB1421/AB748 data.
 
     Attributes:
         name (str): The official name of the agency
