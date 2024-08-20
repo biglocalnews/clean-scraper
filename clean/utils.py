@@ -4,14 +4,14 @@ import logging
 import os
 from pathlib import Path
 from time import sleep
-from typing import List, Literal, Optional, TypedDict
+from typing import Literal, Optional, TypedDict
 from urllib.parse import parse_qs, urlparse
 
 import requests
-import us  # type: ignore
-from pytube import Playlist, YouTube  # type: ignore
+import us
 from retry import retry
 from typing_extensions import NotRequired
+from yt_dlp import YoutubeDL
 
 logger = logging.getLogger(__name__)
 
@@ -215,29 +215,48 @@ def get_url(
     return response
 
 
-def get_youtube_url(url: str) -> List[str]:
+class Video(TypedDict):
+    asset_url: str
+    name: str
+
+
+def get_youtube_url(url: str, browser="chrome") -> list[Video]:
     """Download a video or playlist from a YouTube URL and save it to the cache. Return the set of stream URLs to be downloaded.
 
     Args:
         url (str): The URL of the video or playlist to download
     """
     logger.debug(f"Requesting YouTube {url}")
-    stream_urls = []
+    stream_urls: list[Video] = []
+
+    is_quiet = logger.level != logging.DEBUG
+    ydl_opts = {"format": "best", "cookiesfrombrowser": (browser,), "quiet": is_quiet}
 
     try:
-        if is_youtube_playlist(url):
-            logger.debug("Detected Youtube playlist, fetching URLs")
-            playlist = Playlist(url)
-            for video in playlist.videos:
-                stream = video.streams.get_highest_resolution()
-                if stream:
-                    stream_urls.append(stream.url)
-        else:
-            logger.debug("Detected Youtube video, fetching URL")
-            video = YouTube(url)
-            stream = video.streams.get_highest_resolution()
-            if stream:
-                stream_urls.append(stream.url)
+        with YoutubeDL(ydl_opts) as ydl:
+            info_dict = ydl.extract_info(url, download=False)
+            if info_dict and "entries" in info_dict:
+                # This is a playlist
+                logger.debug(f"Detected playlist: {len(info_dict['entries'])} videos")
+                for entry in info_dict["entries"]:
+                    video_url = entry["url"]
+                    video_info = ydl.extract_info(video_url, download=False)
+                    if video_info and "url" in video_info:
+                        stream_urls.append(
+                            {
+                                "asset_url": video_info["url"],
+                                "name": video_info["title"],
+                            }
+                        )
+            elif info_dict and "url" in info_dict:
+                # This is a single video
+                logger.debug("Detected video, fetching URL")
+                stream_urls.append(
+                    {
+                        "asset_url": info_dict["url"],
+                        "name": info_dict["title"],
+                    }
+                )
     except Exception as e:
         logger.error(f"Error fetching YouTube content: {e}")
 
@@ -268,12 +287,12 @@ def is_youtube_playlist(url: str) -> bool:
     return False
 
 
-def get_repeated_asset_url(self, objects: List[MetadataDict]):
+def get_repeated_asset_url(objects: list[MetadataDict]):
     """
     Check if the given list of objects contains any repeated asset URLs and returns them.
 
     Args:
-        objects (List[MetadataDict]): A list of objects, where each object is a dictionary containing metadata.
+        objects (list[MetadataDict]): A list of objects, where each object is a dictionary containing metadata.
 
     Returns:
         set: A set of asset URLs that are repeated in the given list of objects.
