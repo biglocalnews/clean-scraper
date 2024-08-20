@@ -150,8 +150,8 @@ class Site:
         """
         modified_links = copy.deepcopy(links)
         for link in modified_links:
+            parsed_url = urlparse(link["asset_url"])
             if link["asset_url"].endswith("/"):
-                parsed_url = urlparse(link["asset_url"])
                 # Split URL and remove empty strings for trailing slash
                 url_split = [u for u in parsed_url.path.split("/") if u != ""]
                 if not self._is_asset(link["asset_url"]):
@@ -172,6 +172,18 @@ class Site:
                             "parent_page": link["parent_page"],
                             "asset_url": link["asset_url"],
                             "name": link["name"],
+                            "case_id": link.get("case_id") or "",
+                        }
+                    )
+            elif parsed_url.hostname and "youtu" in parsed_url.hostname:
+                youtube_videos = utils.get_youtube_url(link["asset_url"])
+                for video in youtube_videos:
+                    modified_links.append(
+                        {
+                            "title": link["title"],
+                            "parent_page": link["parent_page"],
+                            "asset_url": video["asset_url"],
+                            "name": video["name"],
                             "case_id": link.get("case_id") or "",
                         }
                     )
