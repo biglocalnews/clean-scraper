@@ -1,0 +1,96 @@
+import requests
+
+import logging
+import pathlib
+from urllib.parse import urlparse, parse_qs
+
+from ..cache import Cache
+from .. import utils
+
+logger = logging.getLogger(__name__)
+
+
+# Type base_directory to Path
+def process_nextrequest(base_directory, start_url, force=False):
+    """
+    A wrapper. Given a base filepath and a URL, download file if needed to the proper path and parse the contents to generate the Metadata objects. Should include an option to overwrite files if they already exist.
+    """
+
+    # Download data, if necessary
+    filename, returned_json, file_needs_write = fetch_nextrequest(
+        base_directory, start_url, force=False
+    )
+
+    # Write data, if necessary
+    local_cache = Cache()
+    if file_needs_write and local_json:
+        local_cache.write_json(filename, returned_json)
+
+    # Read data (always necessary!)
+
+    local_metadata = parse_nextrequest(start_url, filename)
+
+
+# Type base_directory to Path
+def fetch_nextrequest(base_directory, start_url, force=False):
+    """
+    Given a link to a NextRequest documents folder, return a proposed filename and the JSON contents
+    """
+    parsed_url = urlparse(start_url)
+    base_url = f"{parsed_url.scheme}://{parsed_url.netloc}"
+    folder_id = parse_qs(parsed_url.query)["folder_filter"][0]
+    json_url = f"{base_url}/client/documents?sort_field=count&sort_order=desc&page_size=50&page_number=1&folder_filter={folder_id}"
+    # Need to build in pagination! And here the plan breaks down. If we're writing unparsed JSON,
+    # we will need more than one file if there are more than the 50 cases.
+    # So should a pagination process save each file individually, maybe with a _page## kind of prefix
+    # check for that? Or should it just, parse all the JSON and combine the documents records into one?
+    # Returning lists of files vs. a filename, etc., sounds unfun. So maybe this handler combines?
+
+    local_cache = Cache()
+    filename = base_directory / f"{folder_id}.json"
+    if not force and local_cache.exists(name):
+        logger.debug(f"File found in cache: {filename}")
+        returned_json = None
+        file_needs_write = False
+    else:
+        # Remember pagination here!
+        r = requests.get(json_url)
+        if not r.ok:
+            logger.error(f"Problem downloading {json_url}: {r.status_code}")
+            returned_json = {}
+            file_needs_write = False
+        else:
+            returned_json = r.json()
+            # local_cache.write_json(filename,
+            file_needs_write = True
+    return (filename, returned_json, file_needs_write)
+
+
+def parse_nextrequest(start_url, filename):
+    local_metadata = []
+    local_cache = Cache()
+    local_json = local_cache.read_json(filename)
+    parsed_url = urlparse(start_url)
+    base_url = f"{parsed_url.scheme}://{parsed_url.netloc}"
+    folder_id = parse_qs(parsed_url.query)["folder_filter"][0]
+    for entry in local_json["documents"]:
+        line = {}
+        line["asset_url"] = base_url + entry["document_path"]
+        if "http" not in line["asset_url"]:
+            line["asset_url"] = base_url + line["asset_url"]
+        line["case_id"] = folder_id
+        line["name"] = entry["title"]
+        line["parent_page"] = folder_id + ".json"  # HEY! Need path here
+        line["title"] = entry["title"]
+        line["details"] = {}
+        for item in [
+            "created_at",
+            "description",
+            "redacted_at",
+            "doc_date",
+            "highlights",
+        ]:
+            if item in entry:
+                line["details"][item] = entry[item]
+        local_metadata.append(line)
+    return local_metadata
