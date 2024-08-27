@@ -10,7 +10,6 @@ from ..cache import Cache
 logger = logging.getLogger(__name__)
 
 
-# Type base_directory to Path
 def process_nextrequest(base_directory: Path, start_url: str, force: bool = False):
     """Turn a base filepath and NextRequest folder URL into saved data and parsed Metadata.
 
@@ -121,3 +120,18 @@ def parse_nextrequest(start_url, filename):
                 line["details"][item] = entry[item]
         local_metadata.append(line)
     return local_metadata
+
+
+def fingerprint_nextrequest(start_url: str):
+    """
+    Given a link to a NextRequest documents folder, try to ID how the site stores stuff.
+
+    Args:
+        start_url (str): The web page for the folder of NextRequest docs you want
+    Returns:
+        local_schema (dict)
+    """
+    # parsed_url = urlparse(start_url)
+    # base_url = f"{parsed_url.scheme}://{parsed_url.netloc}"
+    # folder_id = parse_qs(parsed_url.query)["folder_filter"][0]
+    return
