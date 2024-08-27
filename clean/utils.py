@@ -279,3 +279,37 @@ def get_repeated_asset_url(self, objects: List[MetadataDict]):
         else:
             seen_urls.add(asset_url)
     return repeated_urls
+
+
+def get_youtube_url_with_metadata(url: str) -> List[dict]:
+    """
+    Download a video or playlist from a YouTube URL and save it to the cache. Return the set of stream URLs and their metadata to be downloaded.
+
+    Args:
+        url (str): The URL of the video or playlist to download
+    """
+    logger.debug(f"Requesting YouTube {url}")
+    stream_urls = []
+    item = dict()
+    try:
+        if is_youtube_playlist(url):
+            logger.debug("Detected Youtube playlist, fetching URLs")
+            playlist = Playlist(url)
+            for video in playlist.videos:
+                stream = video.streams.get_highest_resolution()
+                if stream:
+                    item["name"] = video.title
+                    item["url"] = stream.url
+                    stream_urls.append(item)
+        else:
+            logger.debug("Detected Youtube video, fetching URL")
+            video = YouTube(url)
+            stream = video.streams.get_highest_resolution()
+            if stream:
+                item["name"] = video.title
+                item["url"] = stream.url
+                stream_urls.append(item)
+    except Exception as e:
+        logger.error(f"Error fetching YouTube content: {e}")
+
+    return stream_urls
