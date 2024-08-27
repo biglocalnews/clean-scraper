@@ -64,7 +64,7 @@ def fetch_nextrequest(base_directory: Path, start_url: str, force: bool = False)
     # check for that? Or should it just, parse all the JSON and combine the documents records into one?
     # Returning lists of files vs. a filename, etc., sounds unfun. So maybe this handler combines?
 
-    local_cache = Cache()  # type: ignore
+    local_cache = Cache(path=None)
     filename = base_directory / f"{folder_id}.json"
     if not force and local_cache.exists(filename):
         logger.debug(f"File found in cache: {filename}")
@@ -95,7 +95,7 @@ def parse_nextrequest(start_url, filename):
         List(Metadata)
     """
     local_metadata = []
-    local_cache = Cache()
+    local_cache = Cache(path=None)
     local_json = local_cache.read_json(filename)
     parsed_url = urlparse(start_url)
     base_url = f"{parsed_url.scheme}://{parsed_url.netloc}"
