@@ -29,7 +29,7 @@ def process_nextrequest(base_directory: Path, start_url: str, force: bool = Fals
     )
 
     # Write data, if necessary
-    local_cache = Cache()  # type: ignore
+    local_cache = Cache(path=None)
     if file_needs_write and returned_json:
         local_cache.write_json(filename, returned_json)
 
