@@ -1,40 +1,58 @@
+import logging
+from pathlib import Path
+from urllib.parse import parse_qs, urlparse
+
 import requests
 
-import logging
-import pathlib
-from urllib.parse import urlparse, parse_qs
-
+# from .. import utils
 from ..cache import Cache
-from .. import utils
 
 logger = logging.getLogger(__name__)
 
 
 # Type base_directory to Path
-def process_nextrequest(base_directory, start_url, force=False):
-    """
-    A wrapper. Given a base filepath and a URL, download file if needed to the proper path and parse the contents to generate the Metadata objects. Should include an option to overwrite files if they already exist.
-    """
+def process_nextrequest(base_directory: Path, start_url: str, force: bool = False):
+    """Turn a base filepath and NextRequest folder URL into saved data and parsed Metadata.
 
+    This is a wrapper.
+
+    Args:
+        base_direcory (Path): The directory to save data in, e.g., cache/site-name/subpages
+        start_url (str): The web page for the folder of NextRequest docs you want
+        force (bool, default False): Overwrite file, if it exists? Otherwise, use cached version.
+    Returns:
+        List(Metadata)
+    """
     # Download data, if necessary
     filename, returned_json, file_needs_write = fetch_nextrequest(
         base_directory, start_url, force=False
     )
 
     # Write data, if necessary
-    local_cache = Cache()
-    if file_needs_write and local_json:
+    local_cache = Cache()  # type: ignore
+    if file_needs_write and returned_json:
         local_cache.write_json(filename, returned_json)
 
     # Read data (always necessary!)
-
     local_metadata = parse_nextrequest(start_url, filename)
+    return local_metadata
 
 
 # Type base_directory to Path
-def fetch_nextrequest(base_directory, start_url, force=False):
+def fetch_nextrequest(base_directory: Path, start_url: str, force: bool = False):
     """
-    Given a link to a NextRequest documents folder, return a proposed filename and the JSON contents
+    Given a link to a NextRequest documents folder, return a proposed filename and the JSON contents.
+
+    Args:
+        base_direcory (Path): The directory to save data in, e.g., cache/site-name/subpages
+        start_url (str): The web page for the folder of NextRequest docs you want
+        force (bool, default False): Overwrite file, if it exists? Otherwise, use cached version.
+    Returns:
+        filename (str): Proposed filename; file NOT saved
+        returned_json (None | dict): None if no rescrape needed; dict if JSON had to be downloaded
+        file_needs_write (bool): If JSON was downloaded, should it be saved?
+    Notes:
+        This does NOT save the file.
     """
     parsed_url = urlparse(start_url)
     base_url = f"{parsed_url.scheme}://{parsed_url.netloc}"
@@ -46,9 +64,9 @@ def fetch_nextrequest(base_directory, start_url, force=False):
     # check for that? Or should it just, parse all the JSON and combine the documents records into one?
     # Returning lists of files vs. a filename, etc., sounds unfun. So maybe this handler combines?
 
-    local_cache = Cache()
+    local_cache = Cache()  # type: ignore
     filename = base_directory / f"{folder_id}.json"
-    if not force and local_cache.exists(name):
+    if not force and local_cache.exists(filename):
         logger.debug(f"File found in cache: {filename}")
         returned_json = None
         file_needs_write = False
@@ -67,6 +85,15 @@ def fetch_nextrequest(base_directory, start_url, force=False):
 
 
 def parse_nextrequest(start_url, filename):
+    """
+    Given a link to a NextRequest documents folder and a filename to a JSON, return Metadata.
+
+    Args:
+        start_url (str): The web page for the folder of NextRequest docs you want
+        filename: Filename to parse for JSON
+    Returns:
+        List(Metadata)
+    """
     local_metadata = []
     local_cache = Cache()
     local_json = local_cache.read_json(filename)
