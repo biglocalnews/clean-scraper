@@ -131,7 +131,34 @@ def fingerprint_nextrequest(start_url: str):
     Returns:
         local_schema (dict)
     """
-    # parsed_url = urlparse(start_url)
-    # base_url = f"{parsed_url.scheme}://{parsed_url.netloc}"
-    # folder_id = parse_qs(parsed_url.query)["folder_filter"][0]
-    return
+    line = None
+    parsed_url = urlparse(start_url)
+    if parsed_url.path == "/documents":
+        line = {
+            "sitetype": "lapdish",
+            "base_url": f"{parsed_url.scheme}://{parsed_url.netloc}",
+            "folder_id": parse_qs(parsed_url.query)["folder_filter"][0],
+            "page_size": 50,
+            "tally_field": "total_count",
+        }
+        line["json_url"] = (
+            f"{line['base_url']}/client/documents?sort_field=count&sort_order=desc&page_size=50&folder_filter={line['folder_id']}&page_number="
+        )
+
+    elif (
+        len(parsed_url.path.split("/")) == 3
+        and parsed_url.path.split("/")[1] == "requests"
+    ):
+        line = {
+            "sitetype": "bartish",
+            "base_url": f"{parsed_url.scheme}://{parsed_url.netloc}",
+            "folder_id": urlparse(start_url).path.split("/")[2],
+            "page_size": 25,
+            "tally_field": "total_documents_count",
+        }
+        line["json_url"] = (
+            f"{line['base_url']}/client/request_documents?request_id={line['folder_id']}&page_number="
+        )
+    else:
+        logger.error(f"Unable to fingerprint {start_url}")
+    return line
