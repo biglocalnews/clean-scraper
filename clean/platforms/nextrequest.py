@@ -53,10 +53,9 @@ def fetch_nextrequest(base_directory: Path, start_url: str, force: bool = False)
     Notes:
         This does NOT save the file.
     """
-    parsed_url = urlparse(start_url)
-    base_url = f"{parsed_url.scheme}://{parsed_url.netloc}"
-    folder_id = parse_qs(parsed_url.query)["folder_filter"][0]
-    json_url = f"{base_url}/client/documents?sort_field=count&sort_order=desc&page_size=50&page_number=1&folder_filter={folder_id}"
+    profile = fingerprint_nextrequest(start_url)
+    folder_id = profile["folder_id"]
+    json_url = profile["json_url"]
     # Need to build in pagination! And here the plan breaks down. If we're writing unparsed JSON,
     # we will need more than one file if there are more than the 50 cases.
     # So should a pagination process save each file individually, maybe with a _page## kind of prefix
@@ -71,15 +70,24 @@ def fetch_nextrequest(base_directory: Path, start_url: str, force: bool = False)
         file_needs_write = False
     else:
         # Remember pagination here!
-        r = requests.get(json_url)
+        page_number = 1
+        page_url = f"{json_url}{page_number}"
+        r = requests.get(page_url)
         if not r.ok:
-            logger.error(f"Problem downloading {json_url}: {r.status_code}")
+            logger.error(f"Problem downloading {page_url}: {r.status_code}")
             returned_json = {}
             file_needs_write = False
         else:
             returned_json = r.json()
             # local_cache.write_json(filename,
             file_needs_write = True
+
+        """OK, so from here need to parse the initial JSON; extract out the number of items expected;
+        calculate the number of pages needed to be scraped (pages = items // total;
+        if items % total > 0, then pages += 1
+        Then scrape all -those- pages, parse individual results, append to 'documents' list
+        Also need to add in throttle here
+        and throttle will require time.sleep"""
     return (filename, returned_json, file_needs_write)
 
 
