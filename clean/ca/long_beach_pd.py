@@ -8,8 +8,6 @@ from bs4 import BeautifulSoup
 from .. import utils
 from ..cache import Cache
 
-# from .config.palm_springs_pd import index_request_headers
-
 
 class Site:
     """
