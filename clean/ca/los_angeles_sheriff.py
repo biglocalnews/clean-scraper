@@ -17,6 +17,15 @@ logger = logging.getLogger(__name__)
 
 
 class Site:
+    """Scrapes California's Los Angeles Sheriff's Department.
+
+    Notes:
+        Several things in this scraper may break with library updates or standarization efforts.
+        cache.write_json and cache.read_json are using absolute paths.
+        There is no standarized POST function yet.
+        BLN request headers are not used, though those might break the scraper.
+    """
+
     name = "Los Angeles Sheriff's Department"
 
     def __init__(self, data_dir=utils.CLEAN_DATA_DIR, cache_dir=utils.CLEAN_CACHE_DIR):
@@ -83,8 +92,6 @@ class Site:
         partfilename = self.siteslug + "/timestamplog.json"
         fullfilename = self.cache_dir / partfilename
         if self.cache.exists(partfilename):
-            # TODO: Waiting on #70 fix
-            # oldtimestamps = self.cache.read_json(filename)
             oldtimestamps = self.cache.read_json(fullfilename)
         else:
             oldtimestamps = {}
@@ -92,7 +99,6 @@ class Site:
 
     def _save_timestamps(self, indextimestamps):
         targetfilename = self.siteslug + "/timestamplog.json"
-        # TODO: Waiting on #70 fix
         self.cache.write_json(self.cache_dir / targetfilename, indextimestamps)
         return
 
@@ -189,8 +195,6 @@ class Site:
         assetlist = []
         recordsdownloaded = self._build_detail_file_list()
         for recordid in recordsdownloaded:
-            # TODO: #70 fix
-            # sourcefile = f"{self.siteslug}/subpages/{recordid}.json"
             sourcefile = self.cache_dir / f"{self.siteslug}/subpages/{recordid}.json"
             localjson = self.cache.read_json(sourcefile)
             for asset in localjson["SharePointItems"]:
@@ -221,7 +225,5 @@ class Site:
     def _save_assetlist(self, assetlist):
         targetfilename = self.data_dir / (self.siteslug + ".json")
         logger.debug(f"Saving asset list to {targetfilename}")
-        # TODO: #70 fix
-        # self.cache.write_json(targetfilename, assetlist)
         self.cache.write_json(self.cache_dir / targetfilename, assetlist)
         return targetfilename
