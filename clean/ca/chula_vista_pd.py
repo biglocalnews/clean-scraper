@@ -1,3 +1,4 @@
+import logging
 import time
 import urllib.parse
 from pathlib import Path
@@ -7,6 +8,8 @@ from bs4 import BeautifulSoup
 from .. import utils
 from ..cache import Cache
 from .config.chula_vista_pd import index_request_headers
+
+logger = logging.getLogger(__name__)
 
 
 class Site:
@@ -48,7 +51,9 @@ class Site:
         # save the index page url to cache (sensible name)
         base_name = f"{self.base_url.split('/')[-1]}.html"
         filename = f"{self.agency_slug}/{base_name}"
-        self.cache.download(filename, self.base_url, headers=index_request_headers)
+        self.cache.download(
+            filename, self.base_url, force=True, headers=index_request_headers
+        )
         metadata = []
         html = self.cache.read(filename)
         soup = BeautifulSoup(html, "html.parser")
@@ -63,14 +68,15 @@ class Site:
         if desired_element:
             sections = desired_element.find_all("div", class_="accordion-item")
             for section in sections:
-                title = section.find("div", class_="title").get_text(strip=True)
+                case_type = section.find("div", class_="title").get_text(strip=True)
                 links = section.find_all("a")
                 for link in links:
                     link_href = link.get("href", None)
-
-                    case_id = link.get_text().replace("\u00a0", " ")
-                    # case_id = encoded_text.encode('latin1').decode('unicode_escape').encode('latin1').decode('utf-8')
+                    case_id = link.find_previous("p").text
+                    case_id = case_id.replace("\u00a0", " ")
                     if link_href:
+                        title = link.string
+                        title = title.replace("\u00a0", " ")
                         if "splash" not in link_href:
                             link_href = f"https://www.chulavistaca.gov{link_href}"
                             name = link_href.split("/")[-1]
@@ -80,6 +86,7 @@ class Site:
                                 "name": name,
                                 "title": title,
                                 "parent_page": str(filename),
+                                "details": {"case_type": case_type},
                             }
                             metadata.append(payload)
                         else:
@@ -92,13 +99,17 @@ class Site:
                                 "name": name,
                                 "title": title,
                                 "parent_page": str(filename),
+                                "details": {"case_type": case_type},
                             }
                             metadata.append(payload)
 
                     time.sleep(throttle)
-            outfile = self.data_dir.joinpath(f"{self.agency_slug}.json")
-            self.cache.write_json(outfile, metadata)
-            return outfile
+        else:
+            logger.error("HTML for the desired Elelemt")
+
+        outfile = self.data_dir.joinpath(f"{self.agency_slug}.json")
+        self.cache.write_json(outfile, metadata)
+        return outfile
 
     def _convert_splash_link(self, link):
         # Takes a splash link as input and return the actual link after converting
