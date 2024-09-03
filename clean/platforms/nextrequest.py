@@ -170,3 +170,11 @@ def fingerprint_nextrequest(start_url: str):
     else:
         logger.error(f"Unable to fingerprint {start_url}")
     return line
+
+
+def find_max_pages(item_count: int, page_size: int):
+    """Yes, this is basically math.ceiling but I felt bad about another import."""
+    max_pages = item_count // page_size
+    if item_count % page_size > 0:
+        max_pages += 1
+    return max_pages
