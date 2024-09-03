@@ -1,5 +1,6 @@
 import logging
 from pathlib import Path
+from time import sleep
 from urllib.parse import parse_qs, urlparse
 
 import requests
@@ -10,7 +11,9 @@ from ..cache import Cache
 logger = logging.getLogger(__name__)
 
 
-def process_nextrequest(base_directory: Path, start_url: str, force: bool = False):
+def process_nextrequest(
+    base_directory: Path, start_url: str, force: bool = False, throttle: int = 2
+):
     """Turn a base filepath and NextRequest folder URL into saved data and parsed Metadata.
 
     This is a wrapper.
@@ -19,12 +22,13 @@ def process_nextrequest(base_directory: Path, start_url: str, force: bool = Fals
         base_direcory (Path): The directory to save data in, e.g., cache/site-name/subpages
         start_url (str): The web page for the folder of NextRequest docs you want
         force (bool, default False): Overwrite file, if it exists? Otherwise, use cached version.
+        throttle (int, default 2): Time to wait between calls
     Returns:
         List(Metadata)
     """
     # Download data, if necessary
     filename, returned_json, file_needs_write = fetch_nextrequest(
-        base_directory, start_url, force=False
+        base_directory, start_url, force=False, throttle=throttle
     )
 
     # Write data, if necessary
@@ -38,7 +42,9 @@ def process_nextrequest(base_directory: Path, start_url: str, force: bool = Fals
 
 
 # Type base_directory to Path
-def fetch_nextrequest(base_directory: Path, start_url: str, force: bool = False):
+def fetch_nextrequest(
+    base_directory: Path, start_url: str, force: bool = False, throttle: int = 2
+):
     """
     Given a link to a NextRequest documents folder, return a proposed filename and the JSON contents.
 
@@ -56,11 +62,10 @@ def fetch_nextrequest(base_directory: Path, start_url: str, force: bool = False)
     profile = fingerprint_nextrequest(start_url)
     folder_id = profile["folder_id"]
     json_url = profile["json_url"]
-    # Need to build in pagination! And here the plan breaks down. If we're writing unparsed JSON,
-    # we will need more than one file if there are more than the 50 cases.
-    # So should a pagination process save each file individually, maybe with a _page## kind of prefix
-    # check for that? Or should it just, parse all the JSON and combine the documents records into one?
-    # Returning lists of files vs. a filename, etc., sounds unfun. So maybe this handler combines?
+
+    # So we're not writing out the original JSON as the original JSON.
+    # We're writing out the parsed (requests.json()) output of at least the first page,
+    # and then folding in any additional pages' documents into that JSON.
 
     local_cache = Cache(path=None)
     filename = base_directory / f"{folder_id}.json"
@@ -81,13 +86,30 @@ def fetch_nextrequest(base_directory: Path, start_url: str, force: bool = False)
             returned_json = r.json()
             # local_cache.write_json(filename,
             file_needs_write = True
+            total_documents = returned_json[profile["tally_field"]]
+            page_size = profile["page_size"]
+            max_pages = find_max_pages(total_documents, page_size)
+            sleep(throttle)
+            if max_pages > 1:
+                logger.debug(f"Need to download {max_pages - 1:,} more JSON files.")
+                for page_number in range(2, max_pages + 1):
+                    page_url = f"{json_url}{page_number}"
+                    if not r.ok:
+                        logger.error(f"Problem downloading {page_url}: {r.status_code}")
+                        returned_json = {}
+                        file_needs_write = False
+                    else:
+                        additional_json = r.json()
+                        if "documents" not in additional_json:
+                            logger.error(f"Missing 'documents' section from {page_url}")
+                            returned_json = {}
+                            file_needs_write = False
+                        else:
+                            returned_json["documents"].extend(
+                                additional_json["documents"]
+                            )
+                    sleep(throttle)
 
-        """OK, so from here need to parse the initial JSON; extract out the number of items expected;
-        calculate the number of pages needed to be scraped (pages = items // total;
-        if items % total > 0, then pages += 1
-        Then scrape all -those- pages, parse individual results, append to 'documents' list
-        Also need to add in throttle here
-        and throttle will require time.sleep"""
     return (filename, returned_json, file_needs_write)
 
 
