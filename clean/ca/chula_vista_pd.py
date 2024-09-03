@@ -73,35 +73,34 @@ class Site:
                 for link in links:
                     link_href = link.get("href", None)
                     case_id = link.find_previous("p").text
-                    case_id = case_id.replace("\u00a0", " ")
+                    case_id = case_id.replace("\u00a0", " ").replace("\u2014", "--")
                     if link_href:
                         title = link.string
-                        title = title.replace("\u00a0", " ")
-                        if "splash" not in link_href:
-                            link_href = f"https://www.chulavistaca.gov{link_href}"
-                            name = link_href.split("/")[-1]
-                            payload = {
-                                "asset_url": link_href,
-                                "case_id": case_id,
-                                "name": name,
-                                "title": title,
-                                "parent_page": str(filename),
-                                "details": {"case_type": case_type},
-                            }
-                            metadata.append(payload)
+                        title = title.replace("\u00a0", " ").replace("\u2014", "--")
+                        redirect_start = "/?splash="
+                        redirect_end = "&____isexternal=true"
+                        
+                        # Clean up links. Check to see if it's a redirect:
+                        if redirect_start in link_href:
+                            link_href = link_href.replace(redirect_start, "").replace(redirect_end, "")
+                            link_href = urllib.parse.unquote(link_href)
+                            name = title
                         else:
-                            link_href = f"https://www.chulavistaca.gov{link_href}"
-                            link_href = self._convert_splash_link(link_href)
                             name = link_href.split("/")[-1]
-                            payload = {
-                                "asset_url": link_href,
-                                "case_id": case_id,
-                                "name": name,
-                                "title": title,
-                                "parent_page": str(filename),
-                                "details": {"case_type": case_type},
-                            }
-                            metadata.append(payload)
+
+                        # See if it's a relative link
+                        if urllib.parse.urlparse(link_href).netloc == "":
+                            link_href = f"https://www.chulavistaca.gov{link_href}"
+
+                        payload = {
+                            "asset_url": link_href,
+                            "case_id": case_id,
+                            "name": name,
+                            "title": title,
+                            "parent_page": str(filename),
+                            "details": {"case_type": case_type},
+                        }
+                        metadata.append(payload)
 
                     time.sleep(throttle)
         else:
@@ -110,13 +109,3 @@ class Site:
         outfile = self.data_dir.joinpath(f"{self.agency_slug}.json")
         self.cache.write_json(outfile, metadata)
         return outfile
-
-    def _convert_splash_link(self, link):
-        # Takes a splash link as input and return the actual link after converting
-        print(link)
-        parsed_url = urllib.parse.urlparse(link)
-        parsed_params = urllib.parse.parse_qs(parsed_url.query)
-
-        # Decode the splash URL
-        decoded_splash_link = urllib.parse.unquote(parsed_params["splash"][0])
-        return decoded_splash_link
