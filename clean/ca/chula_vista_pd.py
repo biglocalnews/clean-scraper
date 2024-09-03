@@ -79,10 +79,12 @@ class Site:
                         title = title.replace("\u00a0", " ").replace("\u2014", "--")
                         redirect_start = "/?splash="
                         redirect_end = "&____isexternal=true"
-                        
+
                         # Clean up links. Check to see if it's a redirect:
                         if redirect_start in link_href:
-                            link_href = link_href.replace(redirect_start, "").replace(redirect_end, "")
+                            link_href = link_href.replace(redirect_start, "").replace(
+                                redirect_end, ""
+                            )
                             link_href = urllib.parse.unquote(link_href)
                             name = title
                         else:
