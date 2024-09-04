@@ -65,7 +65,7 @@ setup(
         "charset-normalizer==3.3.2",
         "clean-scraper",
         "click==8.1.7",
-        "cryptography==43.0.0",
+        "cryptography==43.0.1",
         "decorator==5.1.1",
         "html5lib==1.1",
         "idna==3.7",
