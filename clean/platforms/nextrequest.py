@@ -126,17 +126,20 @@ def parse_nextrequest(start_url, filename):
     local_metadata = []
     local_cache = Cache(path=None)
     local_json = local_cache.read_json(filename)
-    parsed_url = urlparse(start_url)
-    base_url = f"{parsed_url.scheme}://{parsed_url.netloc}"
-    folder_id = parse_qs(parsed_url.query)["folder_filter"][0]
+    profile = fingerprint_nextrequest(start_url)
+    folder_id = profile["folder_id"]
+    base_url = profile["base_url"]
+
     for entry in local_json["documents"]:
+        document_path = entry[profile["document_path"]]
         line = {}
-        line["asset_url"] = base_url + entry["document_path"]
-        if "http" not in line["asset_url"]:
+        line["asset_url"] = document_path
+        if urlparse(line["asset_url"]).netloc == "":
             line["asset_url"] = base_url + line["asset_url"]
         line["case_id"] = folder_id
         line["name"] = entry["title"]
         line["parent_page"] = folder_id + ".json"  # HEY! Need path here
+        # Smarter to derive from filename, right?
         line["title"] = entry["title"]
         line["details"] = {}
         for item in [
@@ -161,6 +164,13 @@ def fingerprint_nextrequest(start_url: str):
     Returns:
         local_schema (dict)
     """
+    """To-do:
+        Parser needs to map out all of the metadata locations we want to preserve.
+        Where is the asset URL?
+        What details do we want to preserve?
+        How are the references to do those details stored, like how do we handle the subkey?
+        Who is we, and why is we typing this at 10 p.m.?
+    """
     line = None
     parsed_url = urlparse(start_url)
     if parsed_url.path == "/documents":
@@ -170,6 +180,7 @@ def fingerprint_nextrequest(start_url: str):
             "folder_id": parse_qs(parsed_url.query)["folder_filter"][0],
             "page_size": 50,
             "tally_field": "total_count",
+            "document_path": "document_path",
         }
         line["json_url"] = (
             f"{line['base_url']}/client/documents?sort_field=count&sort_order=desc&page_size=50&folder_filter={line['folder_id']}&page_number="
@@ -185,6 +196,7 @@ def fingerprint_nextrequest(start_url: str):
             "folder_id": urlparse(start_url).path.split("/")[2],
             "page_size": 25,
             "tally_field": "total_documents_count",
+            "document_path": "document_scan['document_path']",
         }
         line["json_url"] = (
             f"{line['base_url']}/client/request_documents?request_id={line['folder_id']}&page_number="
