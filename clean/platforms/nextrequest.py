@@ -137,18 +137,17 @@ def parse_nextrequest(start_url, filename):
     local_cache = Cache(path=None)
     local_json = local_cache.read_json(filename)
     profile = fingerprint_nextrequest(start_url)
-    folder_id = profile["folder_id"]
-    base_url = profile["base_url"]
 
     for entry in local_json["documents"]:
         line = {}
+        folder_id = profile["folder_id"]
 
         # asset_url depends on the JSON structure
         if line["site_type"] == "lapdish":
             docpath = entry["document_path"]
             parsed_docpath = urlparse(docpath)
             if parsed_docpath.netloc == "":
-                docpath = line["base_url"] + docpath
+                docpath = entry[profile["base_url"]] + docpath
             docsplit = parsed_docpath.split("/")
             if (
                 len(docsplit) == 3
@@ -157,13 +156,19 @@ def parse_nextrequest(start_url, filename):
             ):
                 docpath += "/download?token="
             line["asset_url"] = docpath
+            line["case_id"] = folder_id
         elif line["site_type"] == "bartish":
-            line["asset_url"] = entry["asset_url"]
+            au = entry["asset_url"]
+            if urlparse(au).netlock == "":
+                au = entry[profile["base_url"]] + au
+            line["asset_url"] = au
+            for item in ["subfolder_name", "folder_name"]:
+                if item in entry and len(entry[item]) > 0:
+                    folder_id = folder_id + "__" + entry[item]
+            line["case_id"] = folder_id
         else:
             logger.error(f"Do not understand sitetype {line['sitetype']}.")
 
-        if urlparse(line["asset_url"]).netloc == "":
-            line["asset_url"] = base_url + line["asset_url"]
         line["case_id"] = folder_id
         line["name"] = entry["title"]
         line["parent_page"] = folder_id + ".json"  # HEY! Need path here
@@ -248,6 +253,9 @@ def fingerprint_nextrequest(start_url: str):
             "file_type": "document_scan['file_type']",
             "visibility": "document_scan['visibility']",
             "upload_date": "document_scan['upload_date']",
+            "folder_name": "document_scan['folder_name']",
+            "subfolder_name": "document_scan['subfolder_name']",
+            "exempt_from_retention": "document_scan['exempt_from_retention']",
         }
 
     else:
