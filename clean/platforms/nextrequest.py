@@ -143,12 +143,12 @@ def parse_nextrequest(start_url, filename):
         folder_id = profile["folder_id"]
 
         # asset_url depends on the JSON structure
-        if line["site_type"] == "lapdish":
+        if profile["site_type"] == "lapdish":
             docpath = entry["document_path"]
             parsed_docpath = urlparse(docpath)
             if parsed_docpath.netloc == "":
-                docpath = entry[profile["base_url"]] + docpath
-            docsplit = parsed_docpath.split("/")
+                docpath = profile["base_url"] + docpath
+            docsplit = parsed_docpath.path.split("/")
             if (
                 len(docsplit) == 3
                 and docsplit[1] == "documents"
@@ -157,10 +157,10 @@ def parse_nextrequest(start_url, filename):
                 docpath += "/download?token="
             line["asset_url"] = docpath
             line["case_id"] = folder_id
-        elif line["site_type"] == "bartish":
+        elif profile["site_type"] == "bartish":
             au = entry["asset_url"]
             if urlparse(au).netlock == "":
-                au = entry[profile["base_url"]] + au
+                au = profile["base_url"] + au
             line["asset_url"] = au
             for item in ["subfolder_name", "folder_name"]:
                 if item in entry and len(entry[item]) > 0:
