@@ -102,7 +102,7 @@ def fetch_nextrequest(
             sleep(throttle)
             if max_pages > 1:
                 logger.debug(f"Need to download {max_pages - 1:,} more JSON files.")
-                for page_number in range(2, max_pages + 1):
+                for page_number in range(2, max_pages):
                     page_url = f"{json_url}{page_number}"
                     if not r.ok:
                         logger.error(f"Problem downloading {page_url}: {r.status_code}")
@@ -159,7 +159,7 @@ def parse_nextrequest(start_url, filename):
             line["case_id"] = folder_id
         elif profile["site_type"] == "bartish":
             au = entry["asset_url"]
-            if urlparse(au).netlock == "":
+            if urlparse(au).netloc == "":
                 au = profile["base_url"] + au
             line["asset_url"] = au
             for item in ["subfolder_name", "folder_name"]:
