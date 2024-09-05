@@ -174,16 +174,25 @@ def parse_nextrequest(start_url, filename):
         line["parent_page"] = folder_id + ".json"  # HEY! Need path here
         # Smarter to derive from filename, right?
         line["title"] = entry["title"]
-        line["details"] = {}
-        for item in [
-            "created_at",
-            "description",
-            "redacted_at",
-            "doc_date",
-            "highlights",
-        ]:
-            if item in entry:
-                line["details"][item] = entry[item]
+
+        if "details" not in line:
+            line["details"] = {}
+
+        for target in profile["details"]:
+            source = profile["details"][target]
+            if "ds!" in source:
+                source = source.replace("ds!", "")
+                if source not in entry["document_scan"]:
+                    logger.debug(
+                        f"Missing ['document_scan']['{source}'] from entry {entry}"
+                    )
+                else:
+                    line["details"][target] = entry["document_scan"][source]
+            else:  # Straight shot, no subkey
+                if source not in entry:
+                    logger.warning(f"Missing {source} from entry {entry}")
+                else:
+                    line["details"][target] = entry[source]
         local_metadata.append(line)
     return local_metadata
 
@@ -246,16 +255,16 @@ def fingerprint_nextrequest(start_url: str):
         )
         line["details"] = {
             "review_state": "review_state",
-            "review_status": "document_scan['review_status']",
-            "severity": "document_scan['severity']",
-            "findings": "document_scan['findings']",
-            "file_size": "document_scan['file_size']",
-            "file_type": "document_scan['file_type']",
-            "visibility": "document_scan['visibility']",
-            "upload_date": "document_scan['upload_date']",
-            "folder_name": "document_scan['folder_name']",
-            "subfolder_name": "document_scan['subfolder_name']",
-            "exempt_from_retention": "document_scan['exempt_from_retention']",
+            "review_status": "ds!review_status",
+            "severity": "ds!severity",
+            "findings": "ds!findings",
+            "file_size": "ds!file_size",
+            "file_type": "ds!file_type",
+            "visibility": "visibility",
+            "upload_date2": "upload_date",
+            "folder_name": "folder_name",
+            "subfolder_name": "subfolder_name",
+            "exempt_from_retention": "exempt_from_retention",
         }
 
     else:
