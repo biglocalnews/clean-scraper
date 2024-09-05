@@ -10,6 +10,16 @@ from ..cache import Cache
 
 logger = logging.getLogger(__name__)
 
+"""
+To-dos include:
+    -- Figure out what the heck to do with things like https://lacity.nextrequest.com/requests/21-2648
+          Recursion was not part of the plan.
+    -- Rework fingerprinting to work with critical values and extras
+    -- Rebuild parser to work with fingerprinting
+    -- Parser needs to build out asset_url. For lapdish, try appending last bit: https://lacity.nextrequest.com/documents/29407016/download?token=
+    -- Test scraper on bartish sites
+"""
+
 
 def process_nextrequest(
     base_directory: Path, start_url: str, force: bool = False, throttle: int = 2
@@ -131,9 +141,27 @@ def parse_nextrequest(start_url, filename):
     base_url = profile["base_url"]
 
     for entry in local_json["documents"]:
-        document_path = entry[profile["document_path"]]
         line = {}
-        line["asset_url"] = document_path
+
+        # asset_url depends on the JSON structure
+        if line["site_type"] == "lapdish":
+            docpath = entry["document_path"]
+            parsed_docpath = urlparse(docpath)
+            if parsed_docpath.netloc == "":
+                docpath = line["base_url"] + docpath
+            docsplit = parsed_docpath.split("/")
+            if (
+                len(docsplit) == 3
+                and docsplit[1] == "documents"
+                and docsplit[2] == entry["id"]
+            ):
+                docpath += "/download?token="
+            line["asset_url"] = docpath
+        elif line["site_type"] == "bartish":
+            line["asset_url"] = entry["asset_url"]
+        else:
+            logger.error(f"Do not understand sitetype {line['sitetype']}.")
+
         if urlparse(line["asset_url"]).netloc == "":
             line["asset_url"] = base_url + line["asset_url"]
         line["case_id"] = folder_id
@@ -175,7 +203,7 @@ def fingerprint_nextrequest(start_url: str):
     parsed_url = urlparse(start_url)
     if parsed_url.path == "/documents":
         line = {
-            "sitetype": "lapdish",
+            "site_type": "lapdish",
             "base_url": f"{parsed_url.scheme}://{parsed_url.netloc}",
             "folder_id": parse_qs(parsed_url.query)["folder_filter"][0],
             "page_size": 50,
@@ -185,13 +213,23 @@ def fingerprint_nextrequest(start_url: str):
         line["json_url"] = (
             f"{line['base_url']}/client/documents?sort_field=count&sort_order=desc&page_size=50&folder_filter={line['folder_id']}&page_number="
         )
+        line["details"] = {
+            "count": "count",
+            "state": "state",
+            "demo": "demo",
+            "created_at": "created_at",
+            "folder_name": "folder_name",
+            "redacted_at": "redacted_at",
+            "file_extension": "file_extension",
+            "highlights": "highlights",
+        }
 
     elif (
         len(parsed_url.path.split("/")) == 3
         and parsed_url.path.split("/")[1] == "requests"
     ):
         line = {
-            "sitetype": "bartish",
+            "site_type": "bartish",
             "base_url": f"{parsed_url.scheme}://{parsed_url.netloc}",
             "folder_id": urlparse(start_url).path.split("/")[2],
             "page_size": 25,
@@ -201,6 +239,17 @@ def fingerprint_nextrequest(start_url: str):
         line["json_url"] = (
             f"{line['base_url']}/client/request_documents?request_id={line['folder_id']}&page_number="
         )
+        line["details"] = {
+            "review_state": "review_state",
+            "review_status": "document_scan['review_status']",
+            "severity": "document_scan['severity']",
+            "findings": "document_scan['findings']",
+            "file_size": "document_scan['file_size']",
+            "file_type": "document_scan['file_type']",
+            "visibility": "document_scan['visibility']",
+            "upload_date": "document_scan['upload_date']",
+        }
+
     else:
         logger.error(f"Unable to fingerprint {start_url}")
     return line
