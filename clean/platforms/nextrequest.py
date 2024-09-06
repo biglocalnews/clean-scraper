@@ -250,9 +250,9 @@ def fingerprint_nextrequest(start_url: str):
     """
     line = None
     parsed_url = urlparse(start_url)
-    if parsed_url.path == "/documents":
+    if parsed_url.path == "/documents":  # LAPDish type
         line = {
-            "site_type": "lapdish",  # LAPDish example
+            "site_type": "lapdish",  # LAPDish type
             "base_url": f"{parsed_url.scheme}://{parsed_url.netloc}",
             "folder_id": parse_qs(parsed_url.query)["folder_filter"][0],
             "page_size": 50,
@@ -266,6 +266,7 @@ def fingerprint_nextrequest(start_url: str):
         )
         line["details"] = {
             "document_path": "document_path",
+            "description": "description",
             "count": "count",
             "state": "state",
             "demo": "demo",
@@ -273,17 +274,19 @@ def fingerprint_nextrequest(start_url: str):
             "folder_name": "folder_name",
             "redacted_at": "redacted_at",
             "file_extension": "file_extension",
+            "doc_date": "doc_date",
+            "id": "id",
             "highlights": "highlights",
             "bln_page_url": "bln_page_url",
             "bln_total_documents": "bln_total_documents",
         }
 
-    elif (
+    elif (  # BARTish type
         len(parsed_url.path.split("/")) == 3
         and parsed_url.path.split("/")[1] == "requests"
     ):
         line = {
-            "site_type": "bartish",  # Bartish example
+            "site_type": "bartish",  # Bartish type
             "base_url": f"{parsed_url.scheme}://{parsed_url.netloc}",
             "folder_id": urlparse(start_url).path.split("/")[2],
             "page_size": 25,
@@ -300,10 +303,18 @@ def fingerprint_nextrequest(start_url: str):
             "review_status": "ds!review_status",
             "severity": "ds!severity",
             "findings": "ds!findings",
+            "file_extension": "file_extension",
             "file_size": "ds!file_size",
             "file_type": "ds!file_type",
-            "visibility": "visibility",
-            "upload_date2": "upload_date",
+            "visibility1": "visibility",
+            "visibility2": "ds!visibility",
+            "upload_date1": "upload_date",
+            "upload_date2": "ds!upload_date",
+            "pretty_id": "ds!pretty_id",
+            "id1": "id",
+            "id2": "ds!id",
+            "document_id": "ds!document_id",
+            "request_id": "request_id",
             "folder_name": "folder_name",
             "subfolder_name": "subfolder_name",
             "exempt_from_retention": "exempt_from_retention",
