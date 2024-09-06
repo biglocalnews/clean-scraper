@@ -1,5 +1,5 @@
 import logging
-from pathlib import Path
+from pathlib import Path, PurePath
 from time import sleep
 from urllib.parse import parse_qs, urlparse
 
@@ -14,12 +14,8 @@ logger = logging.getLogger(__name__)
 To-dos include:
     -- Figure out what the heck to do with things like https://lacity.nextrequest.com/requests/21-2648
           Recursion was not part of the plan.
-    -- Parser should check against the document IDs as another test.
     -- requests should be replaced, if possible, with existing library calls
     -- Identify logging opportunities
-    -- Bring in pages' item counts
-    -- Verify pages' item counts
-    -- Force is breaking down somewhere
 """
 
 
@@ -99,6 +95,9 @@ def fetch_nextrequest(
             # local_cache.write_json(filename,
             file_needs_write = True
             total_documents = returned_json[profile["tally_field"]]
+            for i, _entry in enumerate(returned_json["documents"]):
+                returned_json["documents"][i]["bln_page_url"] = page_url
+                returned_json["documents"][i]["bln_total_documents"] = total_documents
             page_size = profile["page_size"]
             max_pages = find_max_pages(total_documents, page_size)
             sleep(throttle)
@@ -118,6 +117,13 @@ def fetch_nextrequest(
                             returned_json = {}
                             file_needs_write = False
                         else:
+                            for i, _entry in enumerate(additional_json["documents"]):
+                                additional_json["documents"][i][
+                                    "bln_page_url"
+                                ] = page_url
+                                additional_json["documents"][i][
+                                    "bln_total_documents"
+                                ] = total_documents
                             returned_json["documents"].extend(
                                 additional_json["documents"]
                             )
@@ -127,7 +133,7 @@ def fetch_nextrequest(
                 message = f"Expected {total_documents:,} documents "
                 message += f"but got {documents_found:,} instead for "
                 message += f"{start_url}."
-                logger.debug(message)
+                logger.warning(message)
 
     return (filename, returned_json, file_needs_write)
 
@@ -197,8 +203,11 @@ def parse_nextrequest(start_url, filename):
 
         line["case_id"] = folder_id
         line["name"] = entry["title"]
-        line["parent_page"] = folder_id + ".json"  # HEY! Need path here
-        # Smarter to derive from filename, right?
+
+        # Use filename and local_cache's root directory to identify a path relative to the scraper's folder
+        partial_path = PurePath(filename).relative_to(local_cache.path)
+        partial_path = str(partial_path.relative_to(partial_path.parts[0]).as_posix())
+        line["parent_page"] = partial_path
         line["title"] = entry["title"]
 
         if "details" not in line:
@@ -243,12 +252,14 @@ def fingerprint_nextrequest(start_url: str):
     parsed_url = urlparse(start_url)
     if parsed_url.path == "/documents":
         line = {
-            "site_type": "lapdish",
+            "site_type": "lapdish",  # LAPDish example
             "base_url": f"{parsed_url.scheme}://{parsed_url.netloc}",
             "folder_id": parse_qs(parsed_url.query)["folder_filter"][0],
             "page_size": 50,
             "tally_field": "total_count",
-            #            "document_path": "document_path",
+            # "document_path": "document_path",
+            "bln_page_url": "bln_page_url",
+            "bln_total_documents": "bln_total_documents",
         }
         line["json_url"] = (
             f"{line['base_url']}/client/documents?sort_field=count&sort_order=desc&page_size=50&folder_filter={line['folder_id']}&page_number="
@@ -263,6 +274,8 @@ def fingerprint_nextrequest(start_url: str):
             "redacted_at": "redacted_at",
             "file_extension": "file_extension",
             "highlights": "highlights",
+            "bln_page_url": "bln_page_url",
+            "bln_total_documents": "bln_total_documents",
         }
 
     elif (
@@ -270,7 +283,7 @@ def fingerprint_nextrequest(start_url: str):
         and parsed_url.path.split("/")[1] == "requests"
     ):
         line = {
-            "site_type": "bartish",
+            "site_type": "bartish",  # Bartish example
             "base_url": f"{parsed_url.scheme}://{parsed_url.netloc}",
             "folder_id": urlparse(start_url).path.split("/")[2],
             "page_size": 25,
@@ -294,6 +307,8 @@ def fingerprint_nextrequest(start_url: str):
             "folder_name": "folder_name",
             "subfolder_name": "subfolder_name",
             "exempt_from_retention": "exempt_from_retention",
+            "bln_page_url": "bln_page_url",
+            "bln_total_documents": "bln_total_documents",
         }
 
     else:
