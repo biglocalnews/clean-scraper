@@ -14,10 +14,10 @@ logger = logging.getLogger(__name__)
 To-dos include:
     -- Figure out what the heck to do with things like https://lacity.nextrequest.com/requests/21-2648
           Recursion was not part of the plan.
-    -- Parser needs to build out asset_url. For lapdish, try appending last bit: https://lacity.nextrequest.com/documents/29407016/download?token=
-    -- For bartish ... maybe try lacityish approach? asset_url on these Amazon links isn't usable on its own; it becomes things like https://nextrequestdev.s3.amazonaws.com/bart/21-107/46A9EF4133B8B4CA?response-content-disposition=inline%3B%20filename%3D%22RobKrehbiel2-13-14BPD.pdf%22&response-content-type=application%2Fpdf&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAW2Y7QEIAQAROH3WX%2F20240906%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20240906T092548Z&X-Amz-Expires=6000&X-Amz-SignedHeaders=host&X-Amz-Signature=96d351a8d4e646e7d1bb226961d62df797fdf41298ed414c709599cd49a0819f
+    -- Parser should check against the document IDs as another test.
+    -- requests should be replaced, if possible, with existing library calls
+    -- Identify logging opportunities
 
-    -- Test scraper on bartish sites
 """
 
 
