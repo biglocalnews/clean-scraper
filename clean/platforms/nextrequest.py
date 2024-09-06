@@ -19,6 +19,7 @@ To-dos include:
     -- Identify logging opportunities
     -- Bring in pages' item counts
     -- Verify pages' item counts
+    -- Force is breaking down somewhere
 """
 
 
@@ -39,7 +40,7 @@ def process_nextrequest(
     """
     # Download data, if necessary
     filename, returned_json, file_needs_write = fetch_nextrequest(
-        base_directory, start_url, force=False, throttle=throttle
+        base_directory, start_url, force, throttle=throttle
     )
 
     # Write data, if necessary
@@ -103,8 +104,9 @@ def fetch_nextrequest(
             sleep(throttle)
             if max_pages > 1:
                 logger.debug(f"Need to download {max_pages - 1:,} more JSON files.")
-                for page_number in range(2, max_pages):
+                for page_number in range(2, max_pages + 1):
                     page_url = f"{json_url}{page_number}"
+                    r = requests.get(page_url)
                     if not r.ok:
                         logger.error(f"Problem downloading {page_url}: {r.status_code}")
                         returned_json = {}
@@ -120,6 +122,12 @@ def fetch_nextrequest(
                                 additional_json["documents"]
                             )
                     sleep(throttle)
+            documents_found = len(returned_json["documents"])
+            if documents_found != total_documents:
+                message = f"Expected {total_documents:,} documents "
+                message += f"but got {documents_found:,} instead for "
+                message += f"{start_url}."
+                logger.debug(message)
 
     return (filename, returned_json, file_needs_write)
 
