@@ -17,7 +17,8 @@ To-dos include:
     -- Parser should check against the document IDs as another test.
     -- requests should be replaced, if possible, with existing library calls
     -- Identify logging opportunities
-
+    -- Bring in pages' item counts
+    -- Verify pages' item counts
 """
 
 
@@ -245,6 +246,7 @@ def fingerprint_nextrequest(start_url: str):
             f"{line['base_url']}/client/documents?sort_field=count&sort_order=desc&page_size=50&folder_filter={line['folder_id']}&page_number="
         )
         line["details"] = {
+            "document_path": "document_path",
             "count": "count",
             "state": "state",
             "demo": "demo",
@@ -271,6 +273,8 @@ def fingerprint_nextrequest(start_url: str):
             f"{line['base_url']}/client/request_documents?request_id={line['folder_id']}&page_number="
         )
         line["details"] = {
+            "document_path": "ds!document_path",
+            "bogus_asset_url": "asset_url",
             "review_state": "review_state",
             "review_status": "ds!review_status",
             "severity": "ds!severity",
