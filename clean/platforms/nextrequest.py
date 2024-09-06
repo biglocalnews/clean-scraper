@@ -152,7 +152,7 @@ def parse_nextrequest(start_url, filename):
             if (
                 len(docsplit) == 3
                 and docsplit[1] == "documents"
-                and docsplit[2] == entry["id"]
+                # and docsplit[2] == entry["id"]
             ):
                 docpath += "/download?token="
             if urlparse(docpath).scheme == "":
@@ -168,7 +168,7 @@ def parse_nextrequest(start_url, filename):
             if (
                 len(docsplit) == 3
                 and docsplit[1] == "documents"
-                and docsplit[2] == entry["id"]
+                # and docsplit[2] == entry["id"]
             ):
                 docpath += "/download?token="
             if urlparse(docpath).scheme == "":
