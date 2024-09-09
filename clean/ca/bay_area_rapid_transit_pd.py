@@ -43,7 +43,7 @@ class Site:
         for localdir in [self.cache_dir, self.data_dir, self.subpages_dir]:
             utils.create_directory(localdir)
 
-    def scrape_meta(self, throttle: int = 0) -> Path:
+    def scrape_meta(self, throttle: int = 2) -> Path:
         """Gather metadata on downloadable files (videos, etc.).
 
         Args:
@@ -62,7 +62,9 @@ class Site:
 
         for start_url in to_be_scraped:
             force = to_be_scraped[start_url]
-            local_metadata = process_nextrequest(subpages_dir, start_url, force)
+            local_metadata = process_nextrequest(
+                subpages_dir, start_url, force, throttle
+            )
             metadata.extend(local_metadata)
 
         json_filename = self.data_dir / (self.site_slug + ".json")
