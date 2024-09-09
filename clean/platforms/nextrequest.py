@@ -3,19 +3,17 @@ from pathlib import Path, PurePath
 from time import sleep
 from urllib.parse import parse_qs, urlparse
 
-import requests
-
-# from .. import utils
+from .. import utils
 from ..cache import Cache
 
 logger = logging.getLogger(__name__)
 
 """
 To-dos include:
+    -- Build out LAPD example as actual thing usable as a template.
+
     -- Figure out what the heck to do with things like https://lacity.nextrequest.com/requests/21-2648
           Recursion was not part of the plan.
-    -- requests should be replaced, if possible, with existing library calls
-    -- Identify logging opportunities
 """
 
 
@@ -85,7 +83,7 @@ def fetch_nextrequest(
         # Remember pagination here!
         page_number = 1
         page_url = f"{json_url}{page_number}"
-        r = requests.get(page_url)
+        r = utils.get_url(page_url)
         if not r.ok:
             logger.error(f"Problem downloading {page_url}: {r.status_code}")
             returned_json = {}
@@ -105,7 +103,7 @@ def fetch_nextrequest(
                 logger.debug(f"Need to download {max_pages - 1:,} more JSON files.")
                 for page_number in range(2, max_pages + 1):
                     page_url = f"{json_url}{page_number}"
-                    r = requests.get(page_url)
+                    r = utils.get_url(page_url)
                     if not r.ok:
                         logger.error(f"Problem downloading {page_url}: {r.status_code}")
                         returned_json = {}
