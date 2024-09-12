@@ -7,7 +7,6 @@ from bs4 import BeautifulSoup
 
 from .. import utils
 from ..cache import Cache
-from .config.chula_vista_pd import index_request_headers
 
 
 class Site:
@@ -50,9 +49,7 @@ class Site:
         # save the index page url to cache (sensible name)
         base_name = f"{self.index_url.split('/')[-1].split('.')[0]}.html"
         filename = f"{self.agency_slug}/{base_name}"
-        self.cache.download(
-            filename, self.index_url, force=True, headers=index_request_headers
-        )
+        self.cache.download(filename, self.index_url, force=True)
         metadata = []
         html = self.cache.read(filename)
         soup = BeautifulSoup(html, "html.parser")
