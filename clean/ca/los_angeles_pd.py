@@ -15,11 +15,16 @@ logger = logging.getLogger(__name__)
 
 """
 To-do:
--- Start saving index pages to cache
+-- F009-01 Glenn exclusion is not excluding. Why not?
+-- Exclude the other cases. Document for colleagues to bring back to LAPD.
+-- Track which subpage files have been read through the indexes, but lets also check to see if any
+     subpage files were NOT indexed and read them
+-- Bring in extra data from the index and fold it into the metadata, where they're in the index.
 -- Document params and returns on functions
 -- Implemement throttle
 -- Begin calling index scraper from scrape-meta
 -- Shift bart-like individual page scraper to a separate function
+-- Wondering if it makes sense to build out a variable to NOT scrape something if the first request finds there are more than XXXXX documents, maybe set 10,000 as a defaulst but let that be something that can be overridden. Have now found a third case with a typo or whatever.
 """
 
 
@@ -60,10 +65,18 @@ class Site:
         self.detail_urls = self.indexes_dir / "url_details.json"
         self.indexes_scraped = self.indexes_dir / "indexes-scraped.json"
 
-        # Build a dict of URLs that do not work
-        self.bad_urls = {
+        # Build a list of URLs that should not be scraped
+        self.broken_urls = [
+            "https://lacity.nextrequest.com/documents?folder_filter=F009-01",
+            "https://lacity.nextrequest.com/documents?folder_filter=F050-20",
+            "https://lacity.nextrequest.com/documents?folder_filter=F025-15",
+        ]
+
+        # Build a dict of URLs that need to be patched up
+        self.url_fixes = {
             "https://www.lapdonline.org/office-of-the-chief-of-police/constitutional-policing/risk-management-division__trashed/sustained-complaints-of-unlawful-arrest-unlawful-search/": "https://www.lapdonline.org/office-of-the-chief-of-police/constitutional-policing/sustained-complaints-of-unlawful-arrest-unlawful-search/",
             "F118-04 November 22, 2004": "https://lacity.nextrequest.com/documents?folder_filter=F118-04",
+            " https://lacity.nextrequest.com/documents?folder_filter=CF01-3445": "https://lacity.nextrequest.com/documents?folder_filter=CF01-3445",
         }
 
     def scrape_meta(self, throttle: int = 2) -> Path:
@@ -91,8 +104,8 @@ class Site:
         return path
 
     def clean_url(self, page_url, local_url):
-        if local_url in self.bad_urls:
-            local_url = self.bad_urls[local_url]
+        if local_url in self.url_fixes:
+            local_url = self.url_fixes[local_url]
         if urlparse(local_url).netloc == "":
             local_url = urlparse(page_url).netloc + local_url
         if urlparse(local_url).scheme == "":
@@ -131,7 +144,7 @@ class Site:
                 sleep(throttle)
 
                 # Need to write the page
-                soup = BeautifulSoup(r.content)
+                soup = BeautifulSoup(r.content, features="html.parser")
 
                 page_title = soup.title
                 if page_title:
@@ -145,7 +158,9 @@ class Site:
                         original_href = link["href"]
                         href = self.clean_url(page_url, original_href)
                         if "nextrequest.com" in href:
-                            if href not in detail_urls:
+                            if original_href in self.broken_urls:
+                                logger.debug(f"Not scraping broken URL {original_href}")
+                            elif href not in detail_urls:
                                 detail_urls[href] = []
                             detail_urls[href].append(
                                 {"page_title": page_title, "page_url": page_url}
