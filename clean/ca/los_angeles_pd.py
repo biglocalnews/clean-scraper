@@ -2,27 +2,26 @@ import logging
 from pathlib import Path
 from time import sleep
 from typing import Dict, List
-from urllib.parse import urlparse, unquote
+from urllib.parse import unquote, urlparse
+
+from bs4 import BeautifulSoup
 
 from .. import utils
 from ..cache import Cache
 from ..platforms.nextrequest import process_nextrequest
-
-from bs4 import BeautifulSoup
-
-# from ..utils import MetadataDict
 
 logger = logging.getLogger(__name__)
 
 
 """
 To-do:
--- Replace a bunch of prints with logging.* as appropriate
+-- Start saving index pages to cache
 -- Document params and returns on functions
 -- Implemement throttle
 -- Begin calling index scraper from scrape-meta
 -- Shift bart-like individual page scraper to a separate function
 """
+
 
 class Site:
     """Scrape file metadata for the Los Angeles Police Department -- LAPD.
@@ -45,7 +44,9 @@ class Site:
             cache_dir (Path): The directory where files will be cached
         """
         self.site_slug = "ca_los_angeles_pd"
-        self.first_url = "https://www.lapdonline.org/senate-bill-1421-senate-bill-16-sb-16/"
+        self.first_url = (
+            "https://www.lapdonline.org/senate-bill-1421-senate-bill-16-sb-16/"
+        )
         self.data_dir = data_dir
         self.cache_dir = cache_dir
         self.subpages_dir = cache_dir / (self.site_slug + "/subpages")
@@ -54,10 +55,13 @@ class Site:
         for localdir in [self.cache_dir, self.data_dir, self.subpages_dir]:
             utils.create_directory(localdir)
 
+        self.detail_urls = self.indexes_dir / "url_details.json"
+        self.indexes_scraped = self.indexes_dir / "indexes-scraped.json"
+
         # Build a dict of URLs that do not work
         self.bad_urls = {
-        "https://www.lapdonline.org/office-of-the-chief-of-police/constitutional-policing/risk-management-division__trashed/sustained-complaints-of-unlawful-arrest-unlawful-search/": "https://www.lapdonline.org/office-of-the-chief-of-police/constitutional-policing/sustained-complaints-of-unlawful-arrest-unlawful-search/",
-        "F118-04 November 22, 2004": "https://lacity.nextrequest.com/documents?folder_filter=F118-04"
+            "https://www.lapdonline.org/office-of-the-chief-of-police/constitutional-policing/risk-management-division__trashed/sustained-complaints-of-unlawful-arrest-unlawful-search/": "https://www.lapdonline.org/office-of-the-chief-of-police/constitutional-policing/sustained-complaints-of-unlawful-arrest-unlawful-search/",
+            "F118-04 November 22, 2004": "https://lacity.nextrequest.com/documents?folder_filter=F118-04",
         }
 
     def scrape_meta(self, throttle: int = 2) -> Path:
@@ -69,9 +73,6 @@ class Site:
         Returns:
             Path: Local path of JSON file containing metadata on downloadable files
         """
-
-
-
         to_be_scraped: Dict = {
             "https://bart.nextrequest.com/requests/21-107": True,
         }
@@ -92,7 +93,6 @@ class Site:
 
         return json_filename
 
-
     def url_to_filename(self, url):
         # We really really really need a slugify thing
         path = urlparse(url).path
@@ -102,8 +102,7 @@ class Site:
             path = path[:-1]
         path = path.replace("/", "_")
         path += ".html"
-        return(path)
-
+        return path
 
     def clean_url(self, page_url, local_url):
         if local_url in self.bad_urls:
@@ -112,14 +111,14 @@ class Site:
             local_url = urlparse(page_url).netloc + local_url
         if urlparse(local_url).scheme == "":
             local_url = "https" + local_url
-        return(local_url)
+        return local_url
 
     def fetch_indexes(self, throttle: int = 2):
         scraping_complete = False
 
-        detail_urls = {}
-        indexes_scraped = {}
-        indexes_todo = set()
+        detail_urls: dict = {}
+        indexes_scraped: dict = {}
+        indexes_todo: set = set()
         index_passes = 0
 
         indexes_todo.add(self.first_url)
@@ -128,56 +127,67 @@ class Site:
 
         while not scraping_complete:
             index_passes += 1
-            for page_url in list(indexes_todo):    # work with a copy so we're not thrashing the original
-                filename = url_to_filename(page_url)
+            for page_url in list(
+                indexes_todo
+            ):  # work with a copy so we're not thrashing the original
+                filename = self.url_to_filename(page_url)
+                filename = self.indexes_dir / filename
                 indexes_scraped[page_url] = {
                     "subindexes": [],
                     "details": 0,
                 }
-                cleaned_page_url = clean_url(page_url, page_url)
-                print(f"Trying {cleaned_page_url}")
+                cleaned_page_url = self.clean_url(page_url, page_url)
+                logger.debug(f"Trying {cleaned_page_url}")
                 r = utils.get_url(cleaned_page_url)
+
+                self.cache.write_binary(filename, r.content)
+
+                sleep(throttle)
 
                 # Need to write the page
                 soup = BeautifulSoup(r.content)
 
                 page_title = soup.title
                 if page_title:
-                    page_title = unquote(page_title.text.strip())
+                    page_title = unquote(page_title.text.strip())  # type: ignore
 
                 content_divs = soup.findAll("div", {"class": "grid-content"})
                 content_divs.extend(soup.findAll("div", {"class": "link-box"}))
                 for content_div in content_divs:
                     links = content_div.findAll("a")
                     for link in links:
-                        original_href = link['href']
-                        href = clean_url(page_url, original_href)
+                        original_href = link["href"]
+                        href = self.clean_url(page_url, original_href)
                         if "nextrequest.com" in href:
                             if href not in detail_urls:
                                 detail_urls[href] = []
-                            detail_urls[href].append({"page_title": page_title, "page_url": page_url})
-                            indexes_scraped[page_url]['details'] += 1
+                            detail_urls[href].append(
+                                {"page_title": page_title, "page_url": page_url}
+                            )
+                            indexes_scraped[page_url]["details"] += 1
                         else:
                             if original_href not in indexes_scraped:
                                 indexes_todo.add(original_href)
-                            indexes_scraped[page_url]["subindexes"].append(original_href)
+                            indexes_scraped[page_url]["subindexes"].append(
+                                original_href
+                            )
 
             for url in indexes_scraped:
                 if url in indexes_todo:
                     indexes_todo.remove(url)
             if len(indexes_todo) == 0:
-                print(f"Index scraping complete, after {len(indexes_scraped):,} indexes reviewed.")
-                print(f"{len(detail_urls):,} case URLs found.")
-                # print(f"Index pages parsed: {' ... '.join(indexes_scraped)}")
+                logger.debug(
+                    f"Index scraping complete, after {len(indexes_scraped):,} indexes reviewed."
+                )
+                logger.debug(f"{len(detail_urls):,} case URLs found.")
                 scraping_complete = True
             else:
-                print(f"Index scraping pass {index_passes:,}: {len(indexes_scraped):,} indexes scraped, {len(detail_urls):,} case URLs found")
+                logger.debug(
+                    f"Index scraping pass {index_passes:,}: {len(indexes_scraped):,} indexes scraped, {len(detail_urls):,} case URLs found"
+                )
 
-        # HEY! Move to cache call. But maybe write in scrape-meta function?
-        with open("lapd-detail_urls.json", "w", encoding="utf-8") as outfile:
-            outfile.write(json.dumps(detail_urls, indent=4*' '))
+        self.cache.write_json(self.detail_urls, detail_urls)
 
-        with open("indexes-scraped.json", "w", encoding="utf-8") as outfile:
-            json.dumps(indexes_scraped, indent=4 * ' ')
+        self.cache.write_json(self.indexes_scraped, indexes_scraped)
 
-        return (detail_urls, indexes_scraped)
+        return
