@@ -160,12 +160,13 @@ class Site:
                         if "nextrequest.com" in href:
                             if original_href in self.broken_urls:
                                 logger.debug(f"Not scraping broken URL {original_href}")
-                            elif href not in detail_urls:
-                                detail_urls[href] = []
-                            detail_urls[href].append(
-                                {"page_title": page_title, "page_url": page_url}
-                            )
-                            indexes_scraped[page_url]["details"] += 1
+                            else:
+                                if href not in detail_urls:
+                                    detail_urls[href] = []
+                                detail_urls[href].append(
+                                    {"page_title": page_title, "page_url": page_url}
+                                )
+                                indexes_scraped[page_url]["details"] += 1
                         else:
                             if original_href not in indexes_scraped:
                                 indexes_todo.add(original_href)
