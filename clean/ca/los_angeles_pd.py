@@ -1,7 +1,7 @@
 import logging
 from pathlib import Path
 from time import sleep
-from typing import Dict, List
+from typing import Dict, List, Set
 from urllib.parse import unquote, urlparse
 
 from bs4 import BeautifulSoup
@@ -52,6 +52,8 @@ class Site:
         self.subpages_dir = cache_dir / (self.site_slug + "/subpages")
         self.indexes_dir = cache_dir / self.site_slug
         self.cache = Cache(cache_dir)
+        self.rescrape_all_case_files = False  # Do we need to rescrape all the subpages?
+
         for localdir in [self.cache_dir, self.data_dir, self.subpages_dir]:
             utils.create_directory(localdir)
 
@@ -73,24 +75,8 @@ class Site:
         Returns:
             Path: Local path of JSON file containing metadata on downloadable files
         """
-        to_be_scraped: Dict = {
-            "https://bart.nextrequest.com/requests/21-107": True,
-        }
-
-        metadata: List = []
-
-        subpages_dir = self.subpages_dir
-
-        for start_url in to_be_scraped:
-            force = to_be_scraped[start_url]
-            local_metadata = process_nextrequest(
-                subpages_dir, start_url, force, throttle
-            )
-            metadata.extend(local_metadata)
-
-        json_filename = self.data_dir / (self.site_slug + ".json")
-        self.cache.write_json(json_filename, metadata)
-
+        self.fetch_indexes(throttle)
+        json_filename = self.fetch_subpages(throttle)
         return json_filename
 
     def url_to_filename(self, url):
@@ -116,9 +102,9 @@ class Site:
     def fetch_indexes(self, throttle: int = 2):
         scraping_complete = False
 
-        detail_urls: dict = {}
-        indexes_scraped: dict = {}
-        indexes_todo: set = set()
+        detail_urls: Dict = {}
+        indexes_scraped: Dict = {}
+        indexes_todo: Set = set()
         index_passes = 0
 
         indexes_todo.add(self.first_url)
@@ -191,3 +177,29 @@ class Site:
         self.cache.write_json(self.indexes_scraped, indexes_scraped)
 
         return
+
+    def fetch_subpages(self, throttle):
+        # Determine whether everything needs to be rescraped
+        force = self.rescrape_all_case_files
+
+        detail_urls = self.cache.read_json(self.detail_urls)
+
+        # Let's not do anything but reads to detail_urls
+        to_be_scraped: Dict = {}
+        for detail_url in detail_urls.keys():
+            to_be_scraped[detail_url] = force
+
+        metadata: List = []
+
+        subpages_dir = self.subpages_dir
+
+        for start_url in to_be_scraped:
+            force = to_be_scraped[start_url]
+            local_metadata = process_nextrequest(
+                subpages_dir, start_url, force, throttle
+            )
+            metadata.extend(local_metadata)
+
+        json_filename = self.data_dir / (self.site_slug + ".json")
+        self.cache.write_json(json_filename, metadata)
+        return json_filename
