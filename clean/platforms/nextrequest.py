@@ -103,29 +103,40 @@ def fetch_nextrequest(
                 logger.debug(f"Need to download {max_pages - 1:,} more JSON files.")
                 for page_number in range(2, max_pages + 1):
                     page_url = f"{json_url}{page_number}"
-                    r = utils.get_url(page_url)
-                    if not r.ok:
-                        logger.error(f"Problem downloading {page_url}: {r.status_code}")
-                        returned_json = {}
-                        file_needs_write = False
+                    if page_number >= 200:
+                        message = "NextRequest at least on some sites appears to have a hard limit of "
+                        message += f"199 pages. Not trying to scrape {page_url}."
+                        logger.warning(message)
                     else:
-                        additional_json = r.json()
-                        if "documents" not in additional_json:
-                            logger.error(f"Missing 'documents' section from {page_url}")
+                        r = utils.get_url(page_url)
+                        if not r.ok:
+                            logger.error(
+                                f"Problem downloading {page_url}: {r.status_code}"
+                            )
                             returned_json = {}
                             file_needs_write = False
                         else:
-                            for i, _entry in enumerate(additional_json["documents"]):
-                                additional_json["documents"][i][
-                                    "bln_page_url"
-                                ] = page_url
-                                additional_json["documents"][i][
-                                    "bln_total_documents"
-                                ] = total_documents
-                            returned_json["documents"].extend(
-                                additional_json["documents"]
-                            )
-                    sleep(throttle)
+                            additional_json = r.json()
+                            if "documents" not in additional_json:
+                                logger.error(
+                                    f"Missing 'documents' section from {page_url}"
+                                )
+                                returned_json = {}
+                                file_needs_write = False
+                            else:
+                                for i, _entry in enumerate(
+                                    additional_json["documents"]
+                                ):
+                                    additional_json["documents"][i][
+                                        "bln_page_url"
+                                    ] = page_url
+                                    additional_json["documents"][i][
+                                        "bln_total_documents"
+                                    ] = total_documents
+                                returned_json["documents"].extend(
+                                    additional_json["documents"]
+                                )
+                        sleep(throttle)
             documents_found = len(returned_json["documents"])
             if documents_found != total_documents:
                 message = f"Expected {total_documents:,} documents "
