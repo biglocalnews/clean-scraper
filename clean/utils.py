@@ -320,3 +320,28 @@ def post_url(
 
     # Return the response
     return response
+
+
+@retry(tries=3, delay=15, backoff=2)
+def get_cookies(url, user_agent="Big Local News (biglocalnews.org)", **kwargs):
+    """Request the provided URL and return cookie object.
+
+    Args:
+        url (str): the url to be requested
+        user_agent (str): the user-agent header passed with the request (default: biglocalnews.org)
+    """
+    logger.debug(f"Requesting {url}")
+
+    # Set the headers
+    if "headers" not in kwargs:
+        kwargs["headers"] = {}
+    kwargs["headers"]["User-Agent"] = user_agent
+    response = requests.get(url, **kwargs)
+
+    # Verify that the response is 200
+    assert response.ok
+
+    cookies = response.cookies.get_dict()
+
+    # Return the response
+    return cookies
