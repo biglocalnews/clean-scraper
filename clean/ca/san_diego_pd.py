@@ -90,17 +90,12 @@ class Site:
                         # for downstream processing
                         for link in links:
                             # Remove pagination part from html_file name
-                            case_id = re.sub(
-                                r"_page=\d+\.html$",
-                                "",
-                                str(html_file).split(f"{self.agency_slug}/")[-1],
-                            )
                             payload: MetadataDict = {
                                 "title": title,
                                 "parent_page": str(html_file),
                                 "asset_url": link["href"].replace("\n", ""),
                                 "name": link.text.strip().replace("\n", ""),
-                                "case_id": case_id,
+                                "case_id": re.sub(r"_page=\d+$", "", html_file.stem),
                             }
                             metadata.append(payload)
         # Store the metadata in a JSON file in the data directory
