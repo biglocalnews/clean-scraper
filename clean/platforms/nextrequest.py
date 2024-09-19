@@ -103,6 +103,14 @@ def fetch_nextrequest(
             page_size = profile["page_size"]
             max_pages = find_max_pages(total_documents, page_size)
             sleep(throttle)
+            if total_documents > returned_json[profile["doc_limit"]]:
+                message = f"Request found with {total_documents:,} documents, exceeding limits. "
+                message += f"This is probably a bad URL that can't be properly scraped: {page_url}. "
+                message += "Dropping record."
+                logger.warning(message)
+                returned_json = {}
+                file_needs_write = False
+                return (filename, returned_json, file_needs_write)
             if max_pages > 1:
                 logger.debug(f"Need to download {max_pages - 1:,} more JSON files.")
                 for page_number in range(2, max_pages + 1):
@@ -269,6 +277,7 @@ def fingerprint_nextrequest(start_url: str):
             "base_url": f"{parsed_url.scheme}://{parsed_url.netloc}",
             "folder_id": parse_qs(parsed_url.query)["folder_filter"][0],
             "page_size": 50,
+            "doc_limit": 9950,  # Max number of accessible docs in a folder
             "tally_field": "total_count",
             # "document_path": "document_path",
             "bln_page_url": "bln_page_url",
@@ -302,6 +311,7 @@ def fingerprint_nextrequest(start_url: str):
             "site_type": "bartish",  # Bartish type
             "base_url": f"{parsed_url.scheme}://{parsed_url.netloc}",
             "folder_id": urlparse(start_url).path.split("/")[2],
+            "doc_limit": 9950,  # Max number of accessible docs in a folder
             "page_size": 25,
             "tally_field": "total_documents_count",
             #            "document_path": "document_scan['document_path']",
