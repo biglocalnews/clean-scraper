@@ -10,6 +10,10 @@ logger = logging.getLogger(__name__)
 
 """
 To-dos include:
+    -- Set a max number of documents and test against that in the scraper section. Max docs should
+        probably be in the fingerprinting section. Scraper should throw a warning -- Hey, you've asked
+        for more than 9,950 docs -- not scraping ...
+
     -- Build out LAPD example as actual thing usable as a template.
 
     -- Figure out what the heck to do with things like https://lacity.nextrequest.com/requests/21-2648
