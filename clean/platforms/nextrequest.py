@@ -1,6 +1,7 @@
 import logging
 from pathlib import Path, PurePath
 from time import sleep
+from typing import Dict, List
 from urllib.parse import parse_qs, urlparse
 
 from .. import utils
@@ -90,7 +91,7 @@ def fetch_nextrequest(
         r = utils.get_url(page_url)
         if not r.ok:
             logger.error(f"Problem downloading {page_url}: {r.status_code}")
-            returned_json = {}
+            returned_json: Dict = {}  # type: ignore
             file_needs_write = False
         else:
             returned_json = r.json()
@@ -103,7 +104,7 @@ def fetch_nextrequest(
             page_size = profile["page_size"]
             max_pages = find_max_pages(total_documents, page_size)
             sleep(throttle)
-            if total_documents > returned_json[profile["doc_limit"]]:
+            if total_documents > profile["doc_limit"]:
                 message = f"Request found with {total_documents:,} documents, exceeding limits. "
                 message += f"This is probably a bad URL that can't be properly scraped: {page_url}. "
                 message += "Dropping record."
@@ -159,7 +160,7 @@ def fetch_nextrequest(
     return (filename, returned_json, file_needs_write)
 
 
-def parse_nextrequest(start_url, filename):
+def parse_nextrequest(start_url: str, filename: str):
     """
     Given a link to a NextRequest documents folder and a filename to a JSON, return Metadata.
 
@@ -169,12 +170,22 @@ def parse_nextrequest(start_url, filename):
     Returns:
         List(Metadata)
     """
-    local_metadata = []
+    local_metadata: List = []
     local_cache = Cache(path=None)
-    local_json = local_cache.read_json(filename)
+    if not local_cache.exists(filename):
+        logger.warning(f"No file {filename} found to go with {start_url}.")
+        empty_list: List = []
+        return empty_list
+
+    local_json = local_cache.read_json(Path(filename))
     profile = fingerprint_nextrequest(start_url)
 
-    for entry in local_json["documents"]:
+    if "documents" not in local_json:
+        logger.warning(f"No documents dict in {filename} tied to {start_url}.")
+        empty_list: List = []  # type: ignore
+        return empty_list
+
+    for entry in local_json["documents"]:  # type: ignore
         line = {}
         folder_id = profile["folder_id"]
 
@@ -227,9 +238,9 @@ def parse_nextrequest(start_url, filename):
 
         # Use filename and local_cache's root directory to identify a path relative to the scraper's folder
         partial_path = PurePath(filename).relative_to(local_cache.path)
-        partial_path = str(partial_path.relative_to(partial_path.parts[0]).as_posix())
-        line["parent_page"] = partial_path
-        line["title"] = entry["title"]
+        partial_path = str(partial_path.relative_to(partial_path.parts[0]).as_posix())  # type: ignore
+        line["parent_page"] = partial_path  # type: ignore
+        line["title"] = entry["title"]  # type: ignore
 
         if "details" not in line:
             line["details"] = {}
