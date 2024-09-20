@@ -178,7 +178,7 @@ class Site:
                     for link in links:
                         original_href = link["href"]
                         href = self.clean_url(page_url, original_href)
-                        if "nextrequest.com" in href:
+                        if urlparse(href).netloc.endswith(".nextrequest.com"):
                             if original_href in self.broken_urls:
                                 logger.debug(f"Not scraping broken URL {original_href}")
                             else:
