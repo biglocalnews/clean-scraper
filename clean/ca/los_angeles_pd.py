@@ -15,16 +15,10 @@ logger = logging.getLogger(__name__)
 
 """
 To-do:
--- F009-01 Glenn exclusion is not excluding. Why not?
--- Exclude the other cases. Document for colleagues to bring back to LAPD.
--- Track which subpage files have been read through the indexes, but lets also check to see if any
+
+Not doing -- as there's no persistence:
+    -- Track which subpage files have been read through the indexes, but lets also check to see if any
      subpage files were NOT indexed and read them
--- Bring in extra data from the index and fold it into the metadata, where they're in the index.
--- Document params and returns on functions
--- Implemement throttle
--- Begin calling index scraper from scrape-meta
--- Shift bart-like individual page scraper to a separate function
--- Wondering if it makes sense to build out a variable to NOT scrape something if the first request finds there are more than XXXXX documents, maybe set 10,000 as a defaulst but let that be something that can be overridden. Have now found a third case with a typo or whatever.
 """
 
 
@@ -88,11 +82,19 @@ class Site:
         Returns:
             Path: Local path of JSON file containing metadata on downloadable files
         """
-        self.fetch_indexes(throttle)
-        json_filename = self.fetch_subpages(throttle)
+        lookup = self.fetch_indexes(throttle)
+        json_filename, metadata = self.fetch_subpages(throttle)
+
+        logger.debug("Adding origin details to metadata")
+        for i, entry in enumerate(metadata):
+            if entry["case_id"] in lookup:
+                metadata[i]["details"]["bln_source"] = lookup[entry["case_id"]]
+        self.cache.write_json(json_filename, metadata)
+
         return json_filename
 
-    def url_to_filename(self, url):
+    def url_to_filename(self, url: str):
+        """Turn a URL into a proposed filename."""
         # We really really really need a slugify thing
         path = urlparse(url).path
         if path.startswith("/"):
@@ -104,6 +106,15 @@ class Site:
         return path
 
     def clean_url(self, page_url, local_url):
+        """Correct bad URLs.
+
+        Args:
+            page_url: The URL of the page that got us the link
+            local_url: The proposed URL we're trying to clean up
+        Returns:
+            Cleaned URL, with full domain and scheme as needed.
+            URL is checked against a data in self.init for replacement.
+        """
         if local_url in self.url_fixes:
             local_url = self.url_fixes[local_url]
         if urlparse(local_url).netloc == "":
@@ -113,6 +124,16 @@ class Site:
         return local_url
 
     def fetch_indexes(self, throttle: int = 2):
+        """Recursively download LAPD index pages to find subpage URLs.
+
+        Args:
+            throttle (int): Time to wait between requests
+        Returns:
+            lookup (dict): Supplemental data to add to metadata details
+        Writes:
+            detailed_urls.json
+            indexes_scraped.json
+        """
         scraping_complete = False
 
         detail_urls: Dict = {}
@@ -192,9 +213,23 @@ class Site:
 
         self.cache.write_json(self.indexes_scraped, indexes_scraped)
 
-        return
+        lookup: Dict = {}
+        for entry in detail_urls:
+            lookup[entry.split("=")[-1]] = detail_urls[entry]
+
+        return lookup
 
     def fetch_subpages(self, throttle):
+        """Download all subpage URLs as needed; parse all pages.
+
+        Args:
+            throttle: Time to wait between requests
+        Notes:
+            cache.rescrape_all_case_files decides whether already existent files should be downloaded
+        Returns:
+            Filename of JSON metadata
+            Metadata
+        """
         # Determine whether everything needs to be rescraped
         force = self.rescrape_all_case_files
 
@@ -218,4 +253,4 @@ class Site:
 
         json_filename = self.data_dir / (self.site_slug + ".json")
         self.cache.write_json(json_filename, metadata)
-        return json_filename
+        return json_filename, metadata
