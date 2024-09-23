@@ -1,4 +1,5 @@
 import logging
+from math import ceil
 from pathlib import Path, PurePath
 from time import sleep
 from typing import Dict, List
@@ -277,77 +278,73 @@ def fingerprint_nextrequest(start_url: str):
     line = None
     parsed_url = urlparse(start_url)
     if parsed_url.path == "/documents":  # LAPDish type
+        base_url = f"{parsed_url.scheme}://{parsed_url.netloc}"
         line = {
             "site_type": "lapdish",  # LAPDish type
-            "base_url": f"{parsed_url.scheme}://{parsed_url.netloc}",
+            "base_url": base_url,
             "folder_id": parse_qs(parsed_url.query)["folder_filter"][0],
             "page_size": 50,
             "doc_limit": 9950,  # Max number of accessible docs in a folder
             "tally_field": "total_count",
-            # "document_path": "document_path",
             "bln_page_url": "bln_page_url",
             "bln_total_documents": "bln_total_documents",
-        }
-        line["json_url"] = (
-            f"{line['base_url']}/client/documents?sort_field=count&sort_order=desc&page_size=50&folder_filter={line['folder_id']}&page_number="
-        )
-        line["details"] = {
-            "document_path": "document_path",
-            "description": "description",
-            "count": "count",
-            "state": "state",
-            "demo": "demo",
-            "created_at": "created_at",
-            "folder_name": "folder_name",
-            "redacted_at": "redacted_at",
-            "file_extension": "file_extension",
-            "doc_date": "doc_date",
-            "id": "id",
-            "highlights": "highlights",
-            "bln_page_url": "bln_page_url",
-            "bln_total_documents": "bln_total_documents",
+            "json_url": f"{base_url}/client/documents?sort_field=count&sort_order=desc&page_size=50&folder_filter={line['folder_id']}&page_number=",  # type: ignore
+            "details": {
+                "document_path": "document_path",
+                "description": "description",
+                "count": "count",
+                "state": "state",
+                "demo": "demo",
+                "created_at": "created_at",
+                "folder_name": "folder_name",
+                "redacted_at": "redacted_at",
+                "file_extension": "file_extension",
+                "doc_date": "doc_date",
+                "id": "id",
+                "highlights": "highlights",
+                "bln_page_url": "bln_page_url",
+                "bln_total_documents": "bln_total_documents",
+            },
         }
 
     elif (  # BARTish type
         len(parsed_url.path.split("/")) == 3
         and parsed_url.path.split("/")[1] == "requests"
     ):
+        base_url = f"{parsed_url.scheme}://{parsed_url.netloc}"
         line = {
             "site_type": "bartish",  # Bartish type
-            "base_url": f"{parsed_url.scheme}://{parsed_url.netloc}",
+            "base_url": base_url,
             "folder_id": urlparse(start_url).path.split("/")[2],
             "doc_limit": 9950,  # Max number of accessible docs in a folder
             "page_size": 25,
             "tally_field": "total_documents_count",
-            #            "document_path": "document_scan['document_path']",
-        }
-        line["json_url"] = (
-            f"{line['base_url']}/client/request_documents?request_id={line['folder_id']}&page_number="
-        )
-        line["details"] = {
-            "document_path": "ds!document_path",
-            "bogus_asset_url": "asset_url",
-            "review_state": "review_state",
-            "review_status": "ds!review_status",
-            "severity": "ds!severity",
-            "findings": "ds!findings",
-            "file_extension": "file_extension",
-            "file_size": "ds!file_size",
-            "file_type": "ds!file_type",
-            "visibility1": "visibility",
-            "visibility2": "ds!visibility",
-            "upload_date1": "upload_date",
-            "upload_date2": "ds!upload_date",
-            "pretty_id": "ds!pretty_id",
-            "id1": "id",
-            "id2": "ds!id",
-            "document_id": "ds!document_id",
-            "request_id": "request_id",
-            "folder_name": "folder_name",
-            "subfolder_name": "subfolder_name",
-            "exempt_from_retention": "exempt_from_retention",
-            "bln_page_url": "bln_page_url",
-            "bln_total_documents": "bln_total_documents",
+            "json_url": f"{base_url}/client/request_documents?request_id={line['folder_id']}&page_number=",  # type: ignore
+            "details": {
+                "document_path": "ds!document_path",
+                "bogus_asset_url": "asset_url",
+                "review_state": "review_state",
+                "review_status": "ds!review_status",
+                "severity": "ds!severity",
+                "findings": "ds!findings",
+                "file_extension": "file_extension",
+                "file_size": "ds!file_size",
+                "file_type": "ds!file_type",
+                "visibility1": "visibility",
+                "visibility2": "ds!visibility",
+                "upload_date1": "upload_date",
+                "upload_date2": "ds!upload_date",
+                "pretty_id": "ds!pretty_id",
+                "id1": "id",
+                "id2": "ds!id",
+                "document_id": "ds!document_id",
+                "request_id": "request_id",
+                "folder_name": "folder_name",
+                "subfolder_name": "subfolder_name",
+                "exempt_from_retention": "exempt_from_retention",
+                "bln_page_url": "bln_page_url",
+                "bln_total_documents": "bln_total_documents",
+            },
         }
 
     else:
@@ -356,8 +353,4 @@ def fingerprint_nextrequest(start_url: str):
 
 
 def find_max_pages(item_count: int, page_size: int):
-    """Yes, this is basically math.ceiling but I felt bad about another import."""
-    max_pages = item_count // page_size
-    if item_count % page_size > 0:
-        max_pages += 1
-    return max_pages
+    return ceil(item_count, page_size)  # type: ignore
