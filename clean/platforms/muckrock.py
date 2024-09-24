@@ -31,14 +31,16 @@ def process_muckrock(
     filename, returned_json, file_needs_write = fetch_muckrock(
         base_directory, request_url, force
     )
-
     # Write data, if necessary
     local_cache = Cache(path=None)
+    file_path = Path(filename)
+    cache_dir = Path(local_cache.path)
+    partial_path = file_path.relative_to(cache_dir)
     if file_needs_write and returned_json:
         local_cache.write_json(filename, returned_json)
 
     # Read data (always necessary!)
-    local_metadata = parse_muckrock(request_url, filename)
+    local_metadata = parse_muckrock(request_url, filename, partial_path)
     return local_metadata
 
 
@@ -82,7 +84,7 @@ def fetch_muckrock(base_directory: Path, request_url: str, force: bool = False):
     return (filename, returned_json, file_needs_write)
 
 
-def parse_muckrock(request_url: str, filename: str):
+def parse_muckrock(request_url: str, filename: str, partial_path: Path):
     """
     Given a request to a muckrock API and a filename to a JSON, return Metadata.
 
@@ -115,7 +117,9 @@ def parse_muckrock(request_url: str, filename: str):
         for file in files:
             payload = {
                 "title": file.get("title"),
+                "case_id": local_json.get("title"),
                 "asset_url": file.get("ffile"),
+                "parent_page": str(partial_path).replace("\\", "/"),
                 "details": {
                     "page_title": local_json.get("title"),
                     "user_id": local_json.get("user"),
