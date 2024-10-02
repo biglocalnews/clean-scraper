@@ -41,6 +41,7 @@ typing-extensions = "*"
 us = "*"
 pytube = "*"
 clean-scraper = {file = ".", editable = true}
+yt-dlp = "*"
 
 [pipenv]
 allow_prereleases = false
