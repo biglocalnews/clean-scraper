@@ -138,8 +138,6 @@ class Site:
                                     "parent_page": str(filename),
                                 }
                                 metadata.append(payload)
-                        else:
-                            print("unindentified:", link_href)
                     time.sleep(throttle)
         outfile = self.data_dir.joinpath(f"{self.agency_slug}.json")
         self.cache.write_json(outfile, metadata)
