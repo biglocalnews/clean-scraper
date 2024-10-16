@@ -79,7 +79,7 @@ class Site:
                     }
                     print(payload)
                     metadata.append(payload)
-                if "sandiego.gov" in link_href:
+                elif "sandiego" in link_href:
                     metadata.extend(self.scrape_san_diego(link_href, data))
                 time.sleep(throttle)
         outfile = self.data_dir.joinpath(f"{self.agency_slug}.json")
