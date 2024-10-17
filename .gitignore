@@ -131,6 +131,7 @@ Session.vim
 Sessionx.vim
 
 # Temporary
+tmp/
 .netrwhist
 *~
 # Auto-generated tag files
