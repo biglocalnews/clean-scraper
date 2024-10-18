@@ -1,6 +1,7 @@
 import logging
 from pathlib import Path
 from typing import Dict, List
+from urllib.parse import urlparse
 
 from .. import utils
 from ..cache import Cache
@@ -11,7 +12,11 @@ foia_request_url = "https://www.muckrock.com/api_v1/foia/"
 
 
 def process_muckrock(
-    base_directory: Path, request_url: str, force: bool = False, throttle: int = 2
+    base_directory: Path,
+    request_url: str,
+    api_key: str = "",
+    force: bool = False,
+    throttle: int = 2,
 ):
     """
     Turn a base filepath and Muckrock Conversation ID into saved data and parsed Metadata.
@@ -29,7 +34,7 @@ def process_muckrock(
     """
     # Download data, if necessary
     filename, returned_json, file_needs_write = fetch_muckrock(
-        base_directory, request_url, force
+        base_directory, request_url, api_key, force
     )
     # Write data, if necessary
     local_cache = Cache(path=None)
@@ -44,7 +49,9 @@ def process_muckrock(
     return local_metadata
 
 
-def fetch_muckrock(base_directory: Path, request_url: str, force: bool = False):
+def fetch_muckrock(
+    base_directory: Path, request_url: str, api_key: str = "", force: bool = False
+):
     """
     Given a link to a NextRequest documents folder, return a proposed filename and the JSON contents.
 
@@ -62,15 +69,24 @@ def fetch_muckrock(base_directory: Path, request_url: str, force: bool = False):
         This does NOT save the file.
     """
     local_cache = Cache(path=None)
-    request_id = request_url.split("/")[-2].split("-")[-1]
+    if "/foi/" not in request_url:
+        logger.error(
+            f"Missing /foi/ in URL. This does not appear to be a Muckrock URL {request_url}"
+        )
+    request_id = urlparse(request_url).path.split("/")[3].split("-")[-1]
     filename = base_directory / f"{request_id}.json"
+    if len(api_key) > 0:
+        request_headers = {"Authorization": "Token %s" % api_key}
+    else:
+        request_headers = {}
+
     if not force and local_cache.exists(filename):
         logger.debug(f"File found in cache: {filename}")
         returned_json = None
         file_needs_write = False
     else:
         request_url = f"{foia_request_url}{request_id}"
-        r = utils.get_url(request_url)
+        r = utils.post_url(request_url, headers=request_headers)
         if not r.ok:
             logger.error(
                 f"Problem downloading for request url: {request_url}: {r.status_code}"
