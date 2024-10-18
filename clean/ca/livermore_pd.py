@@ -55,7 +55,7 @@ class Site:
         to_be_scraped: Dict = {
             "https://www.muckrock.com/foi/livermore-3295/2023-sb1421sb16-request-livermore-police-department-140174": True,
             "https://www.muckrock.com/foi/livermore-3295/sb1421-records-2022-122912": True,
-            "https://www.muckrock.com/foi/livermore-3295/sb1421-records-85738/#files": True,            
+            "https://www.muckrock.com/foi/livermore-3295/sb1421-records-85738/#files": True,
         }
 
         metadata: List = []
