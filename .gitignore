@@ -139,3 +139,6 @@ tags
 [._]*.un~
 
 .vscode
+
+muckrock-api.txt
+
