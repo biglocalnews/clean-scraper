@@ -157,5 +157,5 @@ def parse_muckrock(request_url: str, filename: str, partial_path: Path):
                 },
             }
             local_metadata.append(payload)
-
+    logger.debug(f"Found {len(local_metadata):,} records from {request_url}")
     return local_metadata
