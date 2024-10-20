@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 
 
 class Site:
-    """Scrape file metadata for the Bay Area Rapid Transit Police Department -- BART PD.
+    """Scrape file metadata for the Livermore Police Department.
 
     Attributes:
         name (str): The official name of the agency
@@ -64,14 +64,7 @@ class Site:
 
         api_file = "muckrock-api.txt"
 
-        api_key = ""
-        if os.path.exists(api_file):
-            logger.debug("API file found.")
-            with open(api_file, encoding="utf-8") as infile:
-                api_key = infile.read().strip()
-                logger.debug(f"API key of {len(api_key)} characters found.")
-        else:
-            logger.debug(f"No API file found at {api_file}")
+        api_key = utils.get_credentials("MUCKROCK_CRP")
 
         for start_url in to_be_scraped:
             force = to_be_scraped[start_url]
