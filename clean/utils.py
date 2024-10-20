@@ -285,7 +285,9 @@ def get_credentials(self, keyname: str, return_error=""):
             with open(credentials_file, "r", encoding="utf-8") as infile:
                 local_credentials = json.load(infile)
                 if keyname in local_credentials:
+                    logger.debug(f"Credentials for {keyname} found in {credentials_file}")
                     return local_credentials[keyname]
+    logger.warning(f"No credentials for {keyname} were found. Returning deault {return_error}")
     return return_error
 
 
