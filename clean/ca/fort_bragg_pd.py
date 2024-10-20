@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 
 
 class Site:
-    """Scrape file metadata for the Bay Area Rapid Transit Police Department -- BART PD.
+    """Scrape file metadata for the Fort Bragg Police Department.
 
     Attributes:
         name (str): The official name of the agency
@@ -60,7 +60,7 @@ class Site:
         subpages_dir = self.subpages_dir
 
         api_key = utils.get_credentials("MUCKROCK_CRP")
-        
+
         for start_url in to_be_scraped:
             force = to_be_scraped[start_url]
             local_metadata = process_muckrock(
