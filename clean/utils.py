@@ -269,7 +269,7 @@ def is_youtube_playlist(url: str) -> bool:
     return False
 
 
-def get_credentials(self, keyname: str, return_error=""):
+def get_credentials(keyname: str, return_error=""):
     """
     Fetch credentials, where possible, for secret things.
 
