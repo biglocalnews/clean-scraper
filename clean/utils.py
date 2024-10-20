@@ -282,7 +282,7 @@ def get_credentials(keyname: str, return_error=""):
     # Not implemented: Fetch remote credentials, if empowered to do so; if no keyname found, look locally
     for credentials_file in ["credentials.json"]:
         if os.path.exists(credentials_file):
-            with open(credentials_file, "r", encoding="utf-8") as infile:
+            with open(credentials_file, encoding="utf-8") as infile:
                 local_credentials = json.load(infile)
                 if keyname in local_credentials:
                     logger.debug(
