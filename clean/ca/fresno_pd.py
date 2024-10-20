@@ -32,7 +32,9 @@ class Site:
             cache_dir (Path): The directory where files will be cached
         """
         self.site_slug = "ca_fresno_pd"
-        self.base_url = "https://www.muckrock.com/foi/fresno-3222/sb1421-records-85695"  # Embargoed
+        self.base_url = (
+            "https://www.muckrock.com/foi/fresno-3222/sb1421-records-85695"  # Embargoed
+        )
         # Initial disclosure page (aka where they start complying with law) contains list of "detail"/child pages with links to the SB16/SB1421/AB748 videos and files
         # along with additional index pages
         self.data_dir = data_dir
