@@ -61,8 +61,6 @@ class Site:
 
         subpages_dir = self.subpages_dir
 
-        api_file = "muckrock-api.txt"
-
         api_key = utils.get_credentials("MUCKROCK_CRP")
 
         for start_url in to_be_scraped:
