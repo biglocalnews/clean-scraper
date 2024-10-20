@@ -1,5 +1,6 @@
 import csv
 import importlib
+import json
 import logging
 import os
 from pathlib import Path
@@ -266,6 +267,26 @@ def is_youtube_playlist(url: str) -> bool:
         return True
 
     return False
+
+
+def get_credentials(self, keyname: str, return_error=""):
+    """
+    Fetch credentials, where possible, for secret things.
+
+    Args:
+        keyname (str): A string, in all uppercase, for the credentials being sought.
+        return_error: What to return if keyname is not found in any available sources.
+    Returns:
+        return_error (default empty string): What to return if keyname is not in any credentials
+    """
+    # Not implemented: Fetch remote credentials, if empowered to do so; if no keyname found, look locally
+    for credentials_file in ["credentials.json"]:
+        if os.path.exists(credentials_file):
+            with open(credentials_file, "r", encoding="utf-8") as infile:
+                local_credentials = json.load(infile)
+                if keyname in local_credentials:
+                    return local_credentials[keyname]
+    return return_error
 
 
 def get_repeated_asset_url(self, objects: List[MetadataDict]):
