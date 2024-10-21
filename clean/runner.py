@@ -36,11 +36,13 @@ class Runner:
         self,
         data_dir: Path = utils.CLEAN_DATA_DIR,
         cache_dir: Path = utils.CLEAN_CACHE_DIR,
+        assets_dir: Path = utils.CLEAN_ASSETS_DIR,
         throttle: int = 0,
     ):
         """Initialize a new instance."""
         self.data_dir = data_dir
         self.cache_dir = cache_dir
+        self.assets_dir = assets_dir
         self.throttle = throttle
 
     def _validate_agency_slug(self, agency_slug: str) -> tuple[str, str]:
@@ -99,7 +101,7 @@ class Runner:
             data = json.load(f)
 
         # Create the download directory if it doesn't exist
-        download_dir = self.data_dir / f"case_files/{slug}"
+        download_dir = self.assets_dir / f"assets/{slug}"
         download_dir.mkdir(parents=True, exist_ok=True)
 
         # Download each asset
