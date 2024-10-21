@@ -24,6 +24,7 @@ CLEAN_DEFAULT_OUTPUT_DIR = CLEAN_USER_DIR / ".clean-scraper"
 CLEAN_OUTPUT_DIR = Path(os.environ.get("CLEAN_OUTPUT_DIR", CLEAN_DEFAULT_OUTPUT_DIR))
 
 # Set the subdirectories for other bits
+CLEAN_ASSETS_DIR = CLEAN_OUTPUT_DIR / "assets"
 CLEAN_CACHE_DIR = CLEAN_OUTPUT_DIR / "cache"
 CLEAN_DATA_DIR = CLEAN_OUTPUT_DIR / "exports"
 CLEAN_LOG_DIR = CLEAN_OUTPUT_DIR / "logs"
