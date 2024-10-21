@@ -1,7 +1,11 @@
+import json
 import logging
 import shutil
+from datetime import datetime
 from importlib import import_module
 from pathlib import Path
+
+import requests
 
 from . import utils
 
@@ -39,13 +43,14 @@ class Runner:
         self.cache_dir = cache_dir
         self.throttle = throttle
 
-    def scrape_meta(self, agency_slug: str) -> Path:
-        """Scrape metadata  for the provided agency.
+    def _validate_agency_slug(self, agency_slug: str) -> tuple[str, str]:
+        """Validate the agency slug and extract state and slug.
 
         Args:
             agency_slug (str): Unique scraper slug composed of two-letter state postal code and agency slug: e.g. ca_san_diego_pd
 
-        Returns: a Path object leading to a CSV file.
+        Returns:
+            tuple: A tuple containing the state and slug.
         """
         # Get the module
         if agency_slug[2] != "_":
@@ -56,6 +61,17 @@ class Runner:
 
         state = agency_slug[:2].strip().lower()
         slug = agency_slug[3:].strip().lower()
+        return state, slug
+
+    def scrape_meta(self, agency_slug: str) -> Path:
+        """Scrape metadata  for the provided agency.
+
+        Args:
+            agency_slug (str): Unique scraper slug composed of two-letter state postal code and agency slug: e.g. ca_san_diego_pd
+
+        Returns: a Path object leading to a CSV file.
+        """
+        state, slug = self._validate_agency_slug(agency_slug)
         state_mod = import_module(f"clean.{state}.{slug}")
         # Run the scrape method
         logger.info(f"Scraping {agency_slug}")
@@ -64,6 +80,52 @@ class Runner:
         # Run the path to the data file
         logger.info(f"Generated {data_path}")
         return data_path
+
+    def download_agency(self, agency_slug: str) -> Path:
+        """Download files for the provided agency.
+
+        Args:
+            geo_id (str): A full-name of the
+            agency_slug (str): Unique scraper slug composed of two-letter state postal code and agency slug: e.g. ca_san_diego_pd
+
+        Returns: a Path object leading to a CSV file.
+        """
+        state, slug = self._validate_agency_slug(agency_slug)
+        # Define the path to the JSON file
+        json_path = Path.home() / f".clean-scraper/exports/{agency_slug}.json"
+
+        # Load the JSON file
+        with open(json_path) as f:
+            data = json.load(f)
+
+        # Create the download directory if it doesn't exist
+        download_dir = self.data_dir / f"case_files/{slug}"
+        download_dir.mkdir(parents=True, exist_ok=True)
+
+        # Download each asset
+        for item, index in data:
+            asset_url = item.get("asset_url")
+            if asset_url:
+                current_date = datetime.now().strftime("%Y%m%d")
+                local_filepath = (
+                    download_dir
+                    / f"{current_date}/assets/{item.get('case_id')}/{item.get('name')}.pdf"
+                )
+                local_filepath.parent.mkdir(parents=True, exist_ok=True)
+                try:
+                    response = requests.get(
+                        asset_url,
+                        headers={"User-Agent": "Big Local News (biglocalnews.org)"},
+                    )
+                    response.raise_for_status()  # Check for request errors
+                    with open(local_filepath, "wb") as file:
+                        file.write(response.content)
+                    logger.info(f"Downloaded {asset_url} to {local_filepath}")
+                    logger.info(f"asset_url {index} / {len(data)}")
+                except Exception as e:
+                    logger.error(f"Failed to download asset {asset_url}: {e}")
+
+        return download_dir
 
     def delete(self):
         """Delete the files in the output directories."""

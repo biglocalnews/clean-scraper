@@ -107,8 +107,60 @@ def scrape_meta(
     runner.scrape_meta(agency)
 
 
+@click.command()
+@click.argument("agency")
+@click.option(
+    "--data-dir",
+    default=utils.CLEAN_DATA_DIR,
+    type=click.Path(),
+    help="The Path were the results will be saved",
+)
+@click.option(
+    "--cache-dir",
+    default=utils.CLEAN_CACHE_DIR,
+    type=click.Path(),
+    help="The Path where results can be cached",
+)
+@click.option(
+    "--log-level",
+    "-l",
+    default="INFO",
+    type=click.Choice(
+        ("DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"), case_sensitive=False
+    ),
+    help="Set the logging level",
+)
+def download_agency(
+    agency: str, data_dir: Path, cache_dir: Path, log_level: str, throttle: int
+):
+    """
+    Command-line interface for downloading files from a CLEAN agency.
+
+    AGENCY -- An agency slug (e.g. ca_san_diego_pd)
+
+    Use the 'list' command to see available agencies and their slugs.
+
+      clean-scraper list
+    """
+    # Set higher log-level on third-party libs that use DEBUG logging,
+    # In order to limit debug logging to our library
+    logging.getLogger("urllib3").setLevel(logging.ERROR)
+
+    # Local logging config
+    logging.basicConfig(level=log_level, format="%(asctime)s - %(name)s - %(message)s")
+
+    # Runner config
+    data_dir = Path(data_dir)
+    cache_dir = Path(cache_dir)
+    runner = Runner(data_dir, cache_dir, throttle)
+
+    # Try running the scraper
+    runner.download_agency(agency)
+
+
 cli.add_command(list_agencies)
 cli.add_command(scrape_meta)
+cli.add_command(download_agency)
 
 if __name__ == "__main__":
     cli()
