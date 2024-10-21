@@ -96,7 +96,7 @@ def scrape_meta(
     # Runner config
     data_dir = Path(data_dir)
     cache_dir = Path(cache_dir)
-    runner = Runner(data_dir, cache_dir, throttle)
+    runner = Runner(data_dir, cache_dir, throttle=throttle)
 
     # Delete files, if asked
     if delete:
@@ -122,6 +122,12 @@ def scrape_meta(
     help="The Path where results can be cached",
 )
 @click.option(
+    "--assets-dir",
+    default=utils.CLEAN_ASSETS_DIR,
+    type=click.Path(),
+    help="The Path where assets will be saved",
+)
+@click.option(
     "--log-level",
     "-l",
     default="INFO",
@@ -131,7 +137,12 @@ def scrape_meta(
     help="Set the logging level",
 )
 def download_agency(
-    agency: str, data_dir: Path, cache_dir: Path, log_level: str, throttle: int
+    agency: str,
+    data_dir: Path,
+    cache_dir: Path,
+    assets_dir: Path,
+    log_level: str,
+    throttle: int,
 ):
     """
     Command-line interface for downloading files from a CLEAN agency.
@@ -152,7 +163,7 @@ def download_agency(
     # Runner config
     data_dir = Path(data_dir)
     cache_dir = Path(cache_dir)
-    runner = Runner(data_dir, cache_dir, throttle)
+    runner = Runner(data_dir, cache_dir, assets_dir, throttle)
 
     # Try running the scraper
     runner.download_agency(agency)

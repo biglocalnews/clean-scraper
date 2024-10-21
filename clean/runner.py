@@ -101,7 +101,7 @@ class Runner:
             data = json.load(f)
 
         # Create the download directory if it doesn't exist
-        download_dir = self.assets_dir / f"assets/{slug}"
+        download_dir = self.assets_dir / f"case_files/{slug}"
         download_dir.mkdir(parents=True, exist_ok=True)
 
         # Download each asset
