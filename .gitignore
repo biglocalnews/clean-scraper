@@ -131,7 +131,7 @@ Session.vim
 Sessionx.vim
 
 # Temporary
-tmp/
+tmp
 .netrwhist
 *~
 # Auto-generated tag files
@@ -140,3 +140,6 @@ tags
 [._]*.un~
 
 .vscode
+
+muckrock-api.txt
+credentials.json
