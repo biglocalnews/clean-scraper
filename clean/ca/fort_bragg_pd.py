@@ -63,9 +63,7 @@ class Site:
 
         for start_url in to_be_scraped:
             force = to_be_scraped[start_url]
-            local_metadata = process_muckrock(
-                subpages_dir, start_url, api_key, force, throttle
-            )
+            local_metadata = process_muckrock(subpages_dir, start_url, api_key, force)
             metadata.extend(local_metadata)
 
         json_filename = self.data_dir / (self.site_slug + ".json")
