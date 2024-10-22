@@ -1,3 +1,4 @@
+import logging
 import time
 from pathlib import Path
 
@@ -5,6 +6,8 @@ from bs4 import BeautifulSoup
 
 from .. import utils
 from ..cache import Cache
+
+logger = logging.getLogger(__name__)
 
 
 class Site:
@@ -77,7 +80,7 @@ class Site:
                         "parent_page": str(filename),
                         "details": {"case_type": data["case_type"]},
                     }
-                    print(payload)
+                    logger.debug(payload)
                     metadata.append(payload)
                 elif "sandiego" in link_href:
                     metadata.extend(self.scrape_san_diego(link_href, data))
