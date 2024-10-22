@@ -18,7 +18,7 @@ class Site:
         name (str): The official name of the agency
     """
 
-    name = " California State Personnel Board"
+    name = "California State Personnel Board"
 
     def __init__(
         self,
