@@ -1,6 +1,6 @@
 import logging
 from pathlib import Path
-from typing import Dict, List
+from typing import Optional
 from urllib.parse import urlparse
 
 from .. import utils
@@ -16,15 +16,14 @@ def process_muckrock(
     request_url: str,
     api_key: str = "",
     force: bool = False,
-    throttle: int = 2,
-):
+) -> list[dict]:
     """
     Turn a base filepath and Muckrock Conversation ID into saved data and parsed Metadata.
 
     This is a wrapper.
 
     Args:
-        base_direcory (Path): The directory to save data in, e.g., cache/site-name/
+        base_directory (Path): The directory to save data in, e.g., cache/site-name/
         request_url (str): The url for the webpage of Muckrock you want documents from you want
         force (bool, default False): Overwrite file, if it exists? Otherwise, use cached version.
         throttle (int, default 2): Time to wait between calls (not using here because not required)
@@ -45,18 +44,18 @@ def process_muckrock(
         local_cache.write_json(filename, returned_json)
 
     # Read data (always necessary!)
-    local_metadata = parse_muckrock(request_url, filename, partial_path)
+    local_metadata = parse_muckrock(request_url, str(filename), partial_path)
     return local_metadata
 
 
 def fetch_muckrock(
     base_directory: Path, request_url: str, api_key: str = "", force: bool = False
-):
+) -> tuple[Path, Optional[dict], bool]:
     """
     Given a link to a NextRequest documents folder, return a proposed filename and the JSON contents.
 
     Args:
-        base_direcory (Path): The directory to save data in, e.g., cache/site-name/subpages
+        base_directory (Path): The directory to save data in, e.g., cache/site-name/subpages
         request_url (str): The request_url for the webpage of Muckrock you want documents from you want
         force (bool, default False): Overwrite file, if it exists? Otherwise, use cached version.
 
@@ -91,7 +90,7 @@ def fetch_muckrock(
             logger.error(
                 f"Problem downloading for request url: {request_url}: {r.status_code}"
             )
-            returned_json: Dict = {}  # type: ignore
+            returned_json = {}
             file_needs_write = False
         else:
             returned_json = r.json()
@@ -100,7 +99,7 @@ def fetch_muckrock(
     return (filename, returned_json, file_needs_write)
 
 
-def parse_muckrock(request_url: str, filename: str, partial_path: Path):
+def parse_muckrock(request_url: str, filename: str, partial_path: Path) -> list[dict]:
     """
     Given a request to a muckrock API and a filename to a JSON, return Metadata.
 
@@ -111,11 +110,11 @@ def parse_muckrock(request_url: str, filename: str, partial_path: Path):
     Returns:
         List(Metadata)
     """
-    local_metadata: List = []
+    local_metadata: list = []
     local_cache = Cache(path=None)
     if not local_cache.exists(filename):
         logger.warning(f"No file {filename} found to go with {request_url}.")
-        empty_list: List = []
+        empty_list: list = []
         return empty_list
     local_json = local_cache.read_json(Path(filename))
     if not isinstance(local_json, dict):
