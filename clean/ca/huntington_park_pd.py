@@ -31,7 +31,7 @@ class Site:
             data_dir (Path): The directory where downstream processed files/data will be saved
             cache_dir (Path): The directory where files will be cached
         """
-        self.site_slug = "ca_huntington_park_pd "
+        self.site_slug = "ca_huntington_park_pd"
         self.base_url = "https://www.muckrock.com/foi/huntington-park-3253/2023-sb1421sb16-request-huntington-park-police-department-140167"  # Embargoed
         # Initial disclosure page (aka where they start complying with law) contains list of "detail"/child pages with links to the SB16/SB1421/AB748 videos and files
         # along with additional index pages
