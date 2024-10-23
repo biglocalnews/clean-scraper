@@ -1,6 +1,4 @@
-import time
 from pathlib import Path
-from typing import List
 
 from bs4 import BeautifulSoup
 
@@ -31,24 +29,6 @@ class Site:
         self._download_index_pages(self.disclosure_url)
         downloadable_files = self._create_json()
         return downloadable_files
-
-    def scrape(self, throttle: int = 0, filter: str = "") -> List[Path]:
-        metadata = self.cache.read_json(
-            self.data_dir.joinpath(f"{self.agency_slug}.json")
-        )
-        downloaded_assets = []
-        for asset in metadata:
-            url = asset["asset_url"]
-            if filter and filter not in url:
-                continue
-            index_dir = (
-                asset["parent_page"].split(f"{self.agency_slug}/")[-1].rstrip(".html")
-            )
-            asset_name = asset["name"].replace(" ", "_")
-            download_path = Path(self.agency_slug, "assets", index_dir, asset_name)
-            time.sleep(throttle)
-            downloaded_assets.append(self.cache.download(str(download_path), url))
-        return downloaded_assets
 
     def _create_json(self) -> Path:
         metadata = []

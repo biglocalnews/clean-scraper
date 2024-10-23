@@ -85,7 +85,6 @@ class Site:
                 case_id = title.replace(date, "").strip()
             asset_link = link["href"]
             if "youtube" in asset_link or "youtu.be" in asset_link:
-                continue
                 youtube_queue = utils.get_youtube_url_with_metadata(asset_link)
                 for youtube_data in youtube_queue:
                     payload = {
@@ -97,6 +96,7 @@ class Site:
                         "details": {"date": date, "year": year},
                     }
                     metadata.append(payload)
+                break
             if "nixle" in asset_link:
                 name = asset_link.split("/")[-1]
                 nixle_data = self._get_doc_from_nixle(title, asset_link)
@@ -125,7 +125,7 @@ class Site:
                     },
                 }
                 metadata.append(payload)
-            else:
+            if "fremontpolice" in asset_link:
                 name = asset_link.split("/")[-1]
                 payload = {
                     "asset_url": asset_link,
@@ -136,7 +136,6 @@ class Site:
                     "details": {"date": date, "year": year},
                 }
                 metadata.append(payload)
-
             time.sleep(throttle)
 
         outfile = self.data_dir.joinpath(f"{self.agency_slug}.json")

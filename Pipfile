@@ -24,6 +24,9 @@ types-beautifulsoup4 = "*"
 types-openpyxl = "*"
 blacken-docs = "*"
 exceptiongroup = "*"
+pytest-cov = "*"
+pytest-sugar = "*"
+pytest-stub = "*"
 
 [packages]
 beautifulsoup4 = "*"
@@ -38,6 +41,8 @@ typing-extensions = "*"
 us = "*"
 pytube = "*"
 clean-scraper = {file = ".", editable = true}
+python-dotenv = "*"
+yt-dlp = "*"
 
 [pipenv]
 allow_prereleases = false
