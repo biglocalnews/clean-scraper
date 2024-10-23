@@ -96,7 +96,7 @@ class Site:
                         "details": {"date": date, "year": year},
                     }
                     metadata.append(payload)
-                break
+
             if "nixle" in asset_link:
                 name = asset_link.split("/")[-1]
                 nixle_data = self._get_doc_from_nixle(title, asset_link)
