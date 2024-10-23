@@ -51,7 +51,6 @@ class Site:
         self.cache.download(
             filename,
             self.base_url,
-            user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.0.0 Safari/537.36",
             headers=index_request_headers,
         )
         metadata = []
@@ -82,7 +81,7 @@ class Site:
             if len(date_search):
                 date = date_search
             if title:
-                case_id = title.replace(date, "").strip()
+                case_id = title.replace(title.split(date)[0], "").strip()
             asset_link = link["href"]
             if "youtube" in asset_link or "youtu.be" in asset_link:
                 youtube_queue = utils.get_youtube_url_with_metadata(asset_link)
@@ -148,7 +147,6 @@ class Site:
         self.cache.download(
             filename,
             asset_link,
-            user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.0.0 Safari/537.36",
         )
         html = self.cache.read(filename)
         soup = BeautifulSoup(html, "html.parser")
