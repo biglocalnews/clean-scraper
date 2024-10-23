@@ -52,7 +52,7 @@ class Site:
         # Use module path to construct agency slug, which we'll use downstream
         mod = Path(__file__)
         state_postal = mod.parent.stem
-        return f"{state_postal}_{mod.stem}"  # ca_fullerton
+        return f"{state_postal}_{mod.stem}"  # ca_palm_springs_pd
 
     def scrape_meta(self, throttle=0):
         # construct a local filename relative to the cache directory - agency slug + page url (ca_path_springs_pd/policies-procedures-training-manuals.html)
@@ -214,7 +214,6 @@ class Site:
                         childMetadata_list = self._get_child_pages(
                             result, filename, child_val
                         )
-                        print("Yes")
 
                         for payload in childMetadata_list:
                             childMetadata.append(payload)
