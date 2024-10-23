@@ -34,7 +34,7 @@ class Site:
         self.data_dir = data_dir
         self.cache_dir = cache_dir
         self.cache = Cache(cache_dir)
-        dotenv_path = "clean/ca/config/.env"
+        dotenv_path = "env/.env"
         load_dotenv(dotenv_path=dotenv_path)
         self.params = {
             "apikey": os.getenv("zenrows_key"),
