@@ -95,7 +95,7 @@ class Site:
                                 link_href
                             )
                             for yt_data in youtube_links:
-                                name = yt_data["title"]
+                                name = yt_data["name"]
                                 yt_url = yt_data["url"]
                                 payload = {
                                     "asset_url": yt_url,

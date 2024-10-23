@@ -1,5 +1,6 @@
 import csv
 import importlib
+import json
 import logging
 import os
 from pathlib import Path
@@ -9,6 +10,7 @@ from urllib.parse import parse_qs, urlparse
 
 import requests
 import us  # type: ignore
+from dotenv import load_dotenv
 from pytube import Playlist, YouTube  # type: ignore
 from retry import retry
 from typing_extensions import NotRequired
@@ -25,6 +27,7 @@ CLEAN_DEFAULT_OUTPUT_DIR = CLEAN_USER_DIR / ".clean-scraper"
 CLEAN_OUTPUT_DIR = Path(os.environ.get("CLEAN_OUTPUT_DIR", CLEAN_DEFAULT_OUTPUT_DIR))
 
 # Set the subdirectories for other bits
+CLEAN_ASSETS_DIR = CLEAN_OUTPUT_DIR / "assets"
 CLEAN_CACHE_DIR = CLEAN_OUTPUT_DIR / "cache"
 CLEAN_DATA_DIR = CLEAN_OUTPUT_DIR / "exports"
 CLEAN_LOG_DIR = CLEAN_OUTPUT_DIR / "logs"
@@ -269,6 +272,40 @@ def is_youtube_playlist(url: str) -> bool:
     return False
 
 
+def get_credentials(keyname: str, return_error="") -> str:
+    """
+    Fetch credentials, where possible, for secret things.
+
+    Args:
+        keyname (str): A string, in all uppercase, for the credentials being sought.
+        return_error: What to return if keyname is not found in any available sources.
+    Returns:
+        return_error (default empty string): What to return if keyname is not in any credentials
+    """
+    # Load environment variables from the .env file
+    load_dotenv(os.path.join("env", ".env"))
+
+    # Check if the keyname exists in the environment variables
+    credential = os.getenv(keyname)
+    if credential:
+        logger.debug(f"Credentials for {keyname} found in .env file")
+        return credential
+
+    # Fallback to local credentials file
+    credentials_file = "credentials.json"
+    if os.path.exists(credentials_file):
+        with open(credentials_file, encoding="utf-8") as infile:
+            local_credentials = json.load(infile)
+            if keyname in local_credentials:
+                logger.debug(f"Credentials for {keyname} found in {credentials_file}")
+                return local_credentials[keyname]
+
+    logger.warning(
+        f"No credentials for {keyname} were found. Returning default {return_error}"
+    )
+    return return_error
+
+
 def get_repeated_asset_url(self, objects: List[MetadataDict]):
     """
     Check if the given list of objects contains any repeated asset URLs and returns them.
@@ -356,11 +393,12 @@ def get_youtube_url_with_metadata(url: str) -> List[dict]:
     """
     logger.debug(f"Requesting YouTube {url}")
     video_info_list = []
-
+    cookie_file_path = os.path.join(os.getcwd(), "env", "youtube_cookie.txt")
     ydl_opts = {
-        "quiet": True,
+        "cookiefile": cookie_file_path,
         "no_warnings": True,
         "format": "best",  # Get the best quality stream
+        "verbose": True,  # Enable detailed logs to check if cookies are read
     }
 
     try:
@@ -372,7 +410,7 @@ def get_youtube_url_with_metadata(url: str) -> List[dict]:
                     stream_url = video.get("url")
                     if stream_url:
                         data = dict()
-                        data["title"] = video.get("title")
+                        data["name"] = video.get("title")
                         data["url"] = stream_url
                         video_info_list.append(data)
             else:
@@ -381,7 +419,7 @@ def get_youtube_url_with_metadata(url: str) -> List[dict]:
                 stream_url = video_info.get("url")
                 if stream_url:
                     data = dict()
-                    data["title"] = video.get("title")
+                    data["name"] = video_info.get("title")
                     data["url"] = stream_url
                     video_info_list.append(data)
     except Exception as e:
