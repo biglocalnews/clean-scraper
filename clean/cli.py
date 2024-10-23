@@ -16,17 +16,16 @@ def cli():
 def list_agencies():
     """List all available agencies and their slugs.
 
-    Agency slugs can then used with the scrape-meta and scrape subcommands
+    Agency slugs can then used with the scrape-meta subcommand
     """
     for state, agencies in utils.get_all_scrapers().items():
         click.echo(f"{state.upper()}:")
         for record in sorted(agencies, key=lambda x: x["slug"]):
             click.echo(f" - {record['slug']} ({record['agency']})")
     message = (
-        "\nTo scrape an agency's file metadata or download files, pass an "
-        "agency slug (e.g. ca_san_diego_pd) as the argument to the scrape-meta or scrape subcommands: \n\n"
+        "\nTo scrape an agency's file metadata, pass an "
+        "agency slug (e.g. ca_san_diego_pd) as the argument to the scrape-meta subcommand: \n\n"
         "\tclean-scraper scrape-meta ca_san_diego_pd\n"
-        "\tclean-scraper scrape ca_san_diego_pd\n"
     )
     click.echo(message)
 
@@ -97,7 +96,7 @@ def scrape_meta(
     # Runner config
     data_dir = Path(data_dir)
     cache_dir = Path(cache_dir)
-    runner = Runner(data_dir, cache_dir, throttle)
+    runner = Runner(data_dir, cache_dir, throttle=throttle)
 
     # Delete files, if asked
     if delete:
@@ -114,7 +113,7 @@ def scrape_meta(
     "--data-dir",
     default=utils.CLEAN_DATA_DIR,
     type=click.Path(),
-    help="The Path were generated data/intermediate files will be saved",
+    help="The Path were the results will be saved",
 )
 @click.option(
     "--cache-dir",
@@ -123,16 +122,10 @@ def scrape_meta(
     help="The Path where results can be cached",
 )
 @click.option(
-    "--filter",
-    "-f",
-    default="",
-    type=str,
-    help="Only download files that match a filter str",
-)
-@click.option(
-    "--delete/--no-delete",
-    default=False,
-    help="Delete generated files from the cache",
+    "--assets-dir",
+    default=utils.CLEAN_ASSETS_DIR,
+    type=click.Path(),
+    help="The Path where assets will be saved",
 )
 @click.option(
     "--log-level",
@@ -143,31 +136,22 @@ def scrape_meta(
     ),
     help="Set the logging level",
 )
-@click.option(
-    "--throttle",
-    "-t",
-    default=0,
-    help="Set throttle on scraping in seconds. Default is no delay on file downloads.",
-)
-def scrape(
+def download_agency(
     agency: str,
     data_dir: Path,
     cache_dir: Path,
-    filter: str,
-    delete: bool,
+    assets_dir: Path,
     log_level: str,
     throttle: int,
 ):
     """
-    Command-line interface for downloading CLEAN files.
+    Command-line interface for downloading files from a CLEAN agency.
 
-    AGENCY -- An agency slug (e.g. ca_san_diego_pd) to scrape.
+    AGENCY -- An agency slug (e.g. ca_san_diego_pd)
 
     Use the 'list' command to see available agencies and their slugs.
 
       clean-scraper list
-
-    The 'scrape-meta' command must be run first to generate a JSON file containing metadata on downloadable files.
     """
     # Set higher log-level on third-party libs that use DEBUG logging,
     # In order to limit debug logging to our library
@@ -175,25 +159,19 @@ def scrape(
 
     # Local logging config
     logging.basicConfig(level=log_level, format="%(asctime)s - %(name)s - %(message)s")
-    logger = logging.getLogger(__name__)
 
     # Runner config
     data_dir = Path(data_dir)
     cache_dir = Path(cache_dir)
-    runner = Runner(data_dir, cache_dir, throttle)
-
-    # Delete files, if asked
-    if delete:
-        logger.info("Deleting files generated from previous scraper run.")
-        runner.delete()
+    runner = Runner(data_dir, cache_dir, assets_dir, throttle)
 
     # Try running the scraper
-    runner.scrape(agency, filter=filter)
+    runner.download_agency(agency)
 
 
 cli.add_command(list_agencies)
 cli.add_command(scrape_meta)
-cli.add_command(scrape)
+cli.add_command(download_agency)
 
 if __name__ == "__main__":
     cli()

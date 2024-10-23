@@ -51,7 +51,7 @@ setup(
     long_description_content_type="text/markdown",
     author="Big Local News",
     url="https://github.com/biglocalnews/clean-scraper",
-    packages=find_packages(),
+    packages=find_packages(exclude=["tests"]),
     include_package_data=True,
     entry_points="""
         [console_scripts]
@@ -63,7 +63,6 @@ setup(
         "certifi==2024.7.4",
         "cffi==1.16.0",
         "charset-normalizer==3.3.2",
-        "clean-scraper",
         "click==8.1.7",
         "cryptography==43.0.0",
         "decorator==5.1.1",
@@ -101,11 +100,6 @@ setup(
         "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
         "Programming Language :: Python :: 3.11",
-    ],
-    test_suite="tests",
-    tests_require=[
-        "pytest",
-        "pytest-vcr",
     ],
     setup_requires=["pytest-runner", "setuptools_scm"],
     use_scm_version={"version_scheme": version_scheme, "local_scheme": local_version},

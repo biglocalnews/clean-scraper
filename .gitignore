@@ -53,6 +53,8 @@ htmlcov/
 .tox/
 .coverage
 .coverage.*
+coverage
+coverage.*
 .cache
 nosetests.xml
 coverage.xml
@@ -118,7 +120,7 @@ venv.bak/
 
 # Swap
 [._]*.s[a-v][a-z]
-!*.svg  # comment out if you don't need vector files
+!*.svg # comment out if you don't need vector files
 [._]*.sw[a-p]
 [._]s[a-rt-v][a-z]
 [._]ss[a-gi-z]
@@ -129,6 +131,7 @@ Session.vim
 Sessionx.vim
 
 # Temporary
+tmp
 .netrwhist
 *~
 # Auto-generated tag files
@@ -137,3 +140,6 @@ tags
 [._]*.un~
 
 .vscode
+
+muckrock-api.txt
+credentials.json
