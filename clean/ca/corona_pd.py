@@ -6,7 +6,7 @@ from bs4 import BeautifulSoup
 
 from .. import utils
 from ..cache import Cache
-from ..config.corona_pd import index_request_headers
+from .config.corona_pd import index_request_headers
 
 
 class Site:
