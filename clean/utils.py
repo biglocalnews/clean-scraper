@@ -1,5 +1,6 @@
 import csv
 import importlib
+import json
 import logging
 import os
 from pathlib import Path
@@ -9,6 +10,7 @@ from urllib.parse import parse_qs, urlparse
 
 import requests
 import us  # type: ignore
+from dotenv import load_dotenv
 from pytube import Playlist, YouTube  # type: ignore
 from retry import retry
 from typing_extensions import NotRequired
@@ -24,6 +26,7 @@ CLEAN_DEFAULT_OUTPUT_DIR = CLEAN_USER_DIR / ".clean-scraper"
 CLEAN_OUTPUT_DIR = Path(os.environ.get("CLEAN_OUTPUT_DIR", CLEAN_DEFAULT_OUTPUT_DIR))
 
 # Set the subdirectories for other bits
+CLEAN_ASSETS_DIR = CLEAN_OUTPUT_DIR / "assets"
 CLEAN_CACHE_DIR = CLEAN_OUTPUT_DIR / "cache"
 CLEAN_DATA_DIR = CLEAN_OUTPUT_DIR / "exports"
 CLEAN_LOG_DIR = CLEAN_OUTPUT_DIR / "logs"
@@ -268,6 +271,40 @@ def is_youtube_playlist(url: str) -> bool:
     return False
 
 
+def get_credentials(keyname: str, return_error="") -> str:
+    """
+    Fetch credentials, where possible, for secret things.
+
+    Args:
+        keyname (str): A string, in all uppercase, for the credentials being sought.
+        return_error: What to return if keyname is not found in any available sources.
+    Returns:
+        return_error (default empty string): What to return if keyname is not in any credentials
+    """
+    # Load environment variables from the .env file
+    load_dotenv(os.path.join("env", ".env"))
+
+    # Check if the keyname exists in the environment variables
+    credential = os.getenv(keyname)
+    if credential:
+        logger.debug(f"Credentials for {keyname} found in .env file")
+        return credential
+
+    # Fallback to local credentials file
+    credentials_file = "credentials.json"
+    if os.path.exists(credentials_file):
+        with open(credentials_file, encoding="utf-8") as infile:
+            local_credentials = json.load(infile)
+            if keyname in local_credentials:
+                logger.debug(f"Credentials for {keyname} found in {credentials_file}")
+                return local_credentials[keyname]
+
+    logger.warning(
+        f"No credentials for {keyname} were found. Returning default {return_error}"
+    )
+    return return_error
+
+
 def get_repeated_asset_url(self, objects: List[MetadataDict]):
     """
     Check if the given list of objects contains any repeated asset URLs and returns them.
@@ -287,3 +324,61 @@ def get_repeated_asset_url(self, objects: List[MetadataDict]):
         else:
             seen_urls.add(asset_url)
     return repeated_urls
+
+
+@retry(tries=3, delay=15, backoff=2)
+def post_url(
+    url, user_agent="Big Local News (biglocalnews.org)", session=None, **kwargs
+):
+    """Request the provided URL and return a response object.
+
+    Args:
+        url (str): the url to be requested
+        user_agent (str): the user-agent header passed with the request (default: biglocalnews.org)
+        session: a session object to use when making the request. optional
+    """
+    logger.debug(f"Requesting {url}")
+
+    # Set the headers
+    if "headers" not in kwargs:
+        kwargs["headers"] = {}
+    kwargs["headers"]["User-Agent"] = user_agent
+
+    # Go get it
+    if session is not None:
+        logger.debug(f"Requesting with session {session}")
+        response = session.post(url, **kwargs)
+    else:
+        response = requests.post(url, **kwargs)
+    logger.debug(f"Response code: {response.status_code}")
+
+    # Verify that the response is 200
+    assert response.ok
+
+    # Return the response
+    return response
+
+
+@retry(tries=3, delay=15, backoff=2)
+def get_cookies(url, user_agent="Big Local News (biglocalnews.org)", **kwargs):
+    """Request the provided URL and return cookie object.
+
+    Args:
+        url (str): the url to be requested
+        user_agent (str): the user-agent header passed with the request (default: biglocalnews.org)
+    """
+    logger.debug(f"Requesting {url}")
+
+    # Set the headers
+    if "headers" not in kwargs:
+        kwargs["headers"] = {}
+    kwargs["headers"]["User-Agent"] = user_agent
+    response = requests.get(url, **kwargs)
+
+    # Verify that the response is 200
+    assert response.ok
+
+    cookies = response.cookies.get_dict()
+
+    # Return the response
+    return cookies
