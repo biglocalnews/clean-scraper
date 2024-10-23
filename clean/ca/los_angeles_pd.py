@@ -60,6 +60,7 @@ class Site:
         self.indexes_scraped = self.indexes_dir / "indexes-scraped.json"
 
         # Build a list of URLs that should not be scraped
+        # FIXME: Remove in favor of Cosmos DB's existing list & its notification system
         self.broken_urls = [
             "https://lacity.nextrequest.com/documents?folder_filter=F009-01",
             "https://lacity.nextrequest.com/documents?folder_filter=F050-20",
