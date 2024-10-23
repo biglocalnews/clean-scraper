@@ -44,6 +44,7 @@ clean-scraper = {file = ".", editable = true}
 selenium = "*"
 selenium-wire = "*"
 blinker = "==1.7.0"
+python-dotenv = "*"
 
 [pipenv]
 allow_prereleases = false
