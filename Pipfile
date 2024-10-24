@@ -43,6 +43,9 @@ pytube = "*"
 clean-scraper = {file = ".", editable = true}
 python-dotenv = "*"
 yt-dlp = "*"
+selenium = "*"
+selenium-wire = "*"
+blinker = "==1.7.0"
 
 [pipenv]
 allow_prereleases = false
