@@ -31,14 +31,14 @@ You can then run a scraper for an agency using its slug:
 clean-scraper scrape-meta ca_san_diego_pd
 ```
 
-> **NOTE**: Always run `scrape-meta` at least once initially. It generates output required by the `scrape` subcommand.
+> **NOTE**: Always run `scrape-meta` at least once initially. It generates output required by the `download_agency` subcommand.
 
 To use the `clean` library in Python, import an agency's scraper and run it directly.
 
 ```python
 from clean.ca import san_diego_pd
 
-san_diego_pd.scrape()
+san_diego_pd.download_agency()
 ```
 
 ## Configuration
@@ -56,6 +56,7 @@ Options:
   --help  Show this message and exit.
 
 Commands:
-  list    List all available agencies and their slugs.
-  scrape-meta  Command-line interface for downloading CLEAN files.
+  list            List all available agencies and their slugs.
+  scrape-meta     Command-line interface for generating metadata CSV about...
+  download_agency Downloads assets retrieved in scrape-meta
 ```
