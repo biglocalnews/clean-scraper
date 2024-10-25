@@ -44,6 +44,21 @@ def local_version(version):
     return ""
 
 
+def parse_requirements(filename):
+    """Load requirements from a pip requirements file."""
+    with open(filename) as file:
+        lines = file.readlines()
+    requirements = []
+    for line in lines:
+        # Skip comments, empty lines, and pip options
+        if line.startswith("#") or line.strip() == "" or line.startswith("-"):
+            continue
+        # Remove inline comments
+        line = line.split("#", 1)[0].strip()
+        requirements.append(line)
+    return requirements
+
+
 setup(
     name="clean-scraper",
     description="Command-line interface for downloading police agency reports and bodycam footage for the CLEAN project",
@@ -57,35 +72,7 @@ setup(
         [console_scripts]
         clean-scraper=clean.cli:cli
     """,
-    install_requires=[
-        "beautifulsoup4==4.12.3",
-        "bs4==0.0.2",
-        "certifi==2024.7.4",
-        "cffi==1.16.0",
-        "charset-normalizer==3.3.2",
-        "click==8.1.7",
-        "cryptography==43.0.0",
-        "decorator==5.1.1",
-        "html5lib==1.1",
-        "idna==3.7",
-        "jellyfish==1.1.0",
-        "pdfminer.six==20231228",
-        "pdfplumber==0.11.2",
-        "pillow==10.4.0",
-        "py==1.11.0",
-        "pycparser==2.22",
-        "pypdfium2==4.30.0",
-        "pytube==15.0.0",
-        "requests==2.32.3",
-        "retry==0.9.2",
-        "six==1.16.0",
-        "soupsieve==2.5",
-        "tenacity==9.0.0",
-        "typing-extensions==4.12.2",
-        "urllib3==1.26.18",
-        "us==3.2.0",
-        "webencodings==0.5.1",
-    ],
+    install_requires=parse_requirements("requirements.txt"),
     license="Apache 2.0 license",
     zip_safe=False,
     classifiers=[
