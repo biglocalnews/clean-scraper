@@ -50,8 +50,8 @@ def parse_requirements(filename):
         lines = file.readlines()
     requirements = []
     for line in lines:
-        # Skip comments and empty lines
-        if line.startswith("#") or line.strip() == "":
+        # Skip comments, empty lines, and pip options
+        if line.startswith("#") or line.strip() == "" or line.startswith("-"):
             continue
         # Remove inline comments
         line = line.split("#", 1)[0].strip()
