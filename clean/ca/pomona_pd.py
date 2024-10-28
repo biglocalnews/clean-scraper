@@ -4,9 +4,7 @@ import time
 from pathlib import Path
 
 from bs4 import BeautifulSoup
-from selenium.webdriver.chrome.options import Options
-from selenium.webdriver.common.by import By
-from seleniumwire import webdriver
+from playwright.sync_api import sync_playwright
 
 from .. import utils
 from ..cache import Cache
@@ -90,6 +88,7 @@ class Site:
                     logger.debug("Writing to Child Page")
                     print("Writing to Child Page")
                     page_no += 1
+                    time.sleep(throttle)
 
         print(local_index_pages)
         case_details = []
@@ -182,45 +181,48 @@ class Site:
 
     def get_headers_and_cookies(self):
         logger.debug("Getting Cookies and Headers")
-        chrome_options = Options()
-        chrome_options.add_argument("--headless")  # Optional: run in headless mode
-        driver = webdriver.Chrome(options=chrome_options)
-        driver.get(self.base_url)
-        # Clear any existing requests
-        driver.requests.clear()
-        while True:
+        captured_requests = []
+
+        with sync_playwright() as p:
+            browser = p.chromium.launch(
+                headless=True
+            )  # Launch Chromium in headless mode
+            context = browser.new_context()  # Create a new browser context
+            page = context.new_page()  # Create a new page
+
+            # Capture network requests
+            def handle_request(request):
+                if "https://sb1421-pomona.govqa.us/WEBAPP/" in request.url:
+                    request_info = {
+                        "url": request.url,
+                        "headers": request.headers,
+                        "cookies": {
+                            cookie["name"]: cookie["value"]
+                            for cookie in context.cookies()
+                        },
+                    }
+                    captured_requests.append(request_info)
+
+            # Attach the event listener for network requests
+            page.on("request", handle_request)
+
+            # Visit the base URL
+            page.goto(self.base_url)
+
+            # Scroll to and click the "Next" button if it exists
             try:
-                driver.execute_script(
-                    "arguments[0].scrollIntoView();",
-                    driver.find_element(By.CSS_SELECTOR, 'a[aria-label="Next"]'),
-                )
-                time.sleep(2)
-                driver.find_element(By.CSS_SELECTOR, 'a[aria-label="Next"]').click()
-                break
+                next_button = page.locator('a[aria-label="Next"]')
+                next_button.scroll_into_view_if_needed()
+                next_button.click()
             except Exception as e:
                 logger.error(f"Could Not Find Next button: {e}")
                 return []
 
-        # Capture all background requests
-        time.sleep(10)  # Adjust based on page load time
-        # Store headers and cookies
-        captured_requests = []
-        for request in driver.requests:
-            print("yes")
-            if request.response:
-                if "https://sb1421-pomona.govqa.us/WEBAPP/" in request.url:
-                    request_info = {
-                        "url": driver.current_url,
-                        "status_code": request.response.status_code,
-                        "headers": request.headers,
-                        "cookies": {
-                            cookie["name"]: cookie["value"]
-                            for cookie in driver.get_cookies()
-                        },
-                    }
-                    captured_requests.append(request_info)
-        # Close the driver
-        driver.quit()
+            # Wait for requests to complete
+            page.wait_for_timeout(10000)  # Adjust based on load time
+
+            # Close the browser
+            browser.close()
 
         return captured_requests
 
