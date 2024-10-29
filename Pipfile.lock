@@ -901,12 +901,12 @@
         },
         "blacken-docs": {
             "hashes": [
-                "sha256:a95176ff28f8d1a2cb7781fed21dc008b08270732d94b1e7336c26115dd92c4a",
-                "sha256:c9c8a65909e20d3af0680f5474f7d5ab80c3297c4a63cef8c50f9ce42ea597ed"
+                "sha256:3cf7a10f5b87886683e3ab07a0dc17de41425f3d21e2948e59f1c6079c45b328",
+                "sha256:73c3dee042a28f2d4f7df6e2c340869d6ced9704f6174d035d9b6199567f890d"
             ],
             "index": "pypi",
             "markers": "python_version >= '3.9'",
-            "version": "==1.19.0"
+            "version": "==1.19.1"
         },
         "certifi": {
             "hashes": [
