@@ -358,3 +358,8 @@ git push origin your-branch-name
 The final step is to submit a [pull request](https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/proposing-changes-to-your-work-with-pull-requests/about-pull-requests) to the main respository, asking the maintainers to consider integrating your patch.
 
 GitHub has [a short guide](https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/proposing-changes-to-your-work-with-pull-requests/creating-a-pull-request) that can walk you through the process. You should tag your issue number in the request so that it gets linked in GitHub's system.
+
+
+## Zen Rows Use
+
+Some sites uses zenrows API, click [here](https://app.zenrows.com/login) to sign up for an account and get a ZENROWS_KEY which you can add to your .env file

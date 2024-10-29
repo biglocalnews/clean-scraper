@@ -37,7 +37,7 @@ class Site:
         dotenv_path = "env/.env"
         load_dotenv(dotenv_path=dotenv_path)
         self.params = {
-            "apikey": os.getenv("zenrows_key"),
+            "apikey": os.getenv("ZENROWS_KEY"),
             "url": "",  # Target website URL
             # Add any other ZenRows parameters here (optional)
         }
