@@ -2,7 +2,6 @@ import re
 import time
 import urllib.parse
 from pathlib import Path
-from typing import List
 
 from bs4 import BeautifulSoup
 
@@ -104,7 +103,7 @@ class Site:
         # Return path to metadata file for downstream use
         return outfile
 
-    def _get_child_page(self, index_page: Path, throttle: int = 0) -> List[dict]:
+    def _get_child_page(self, index_page: Path, throttle: int = 0) -> list[dict]:
         """Get URLs for child pages from index pages."""
         html = self.cache.read(index_page)
         soup = BeautifulSoup(html, "html.parser")
@@ -142,7 +141,7 @@ class Site:
             child_pages.append(page_meta)
         return child_pages
 
-    def _get_index_page_urls(self, first_index_page: Path) -> List[str]:
+    def _get_index_page_urls(self, first_index_page: Path) -> list[str]:
         """Get the URLs for all index pages."""
         # Read the cached HTML file for home page
         html = self.cache.read(first_index_page)
