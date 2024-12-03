@@ -9,12 +9,6 @@ from ..cache import Cache
 from ..utils import MetadataDict
 
 
-# TO DO:
-# 1- Find why I'm not getting the metadata from custodial death reports. Is the problem linked
-# to the allowed_detail_keywords list or with the pagination? --> Ask Gerald about this.
-# 2- Refine the metadata details to get more/better information about the reports.
-
-
 class Site:
     """Scrape file metadata for the Orange County District Attorney's Office."""
 
@@ -152,9 +146,8 @@ class Site:
                     asset_url = (
                         href if href.startswith("http") else f"{self.base_url}{href}"
                     )
-                    case_id = link.split("/")[-2] + asset_url.split("/")[-1]
+                    case_id = asset_url.split("/")[-1]
 
-                    ### TO DO: Need to refine this:
                     payload: MetadataDict = {
                         "asset_url": asset_url,
                         "case_id": case_id,
