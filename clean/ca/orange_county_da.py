@@ -78,13 +78,13 @@ class Site:
         # Officer-involved shooting reports
         officer_base_url = f"{self.disclosure_url}"
         pages_urls.append(officer_base_url)
-        for i in range(2, 15):
+        for i in range(2, 16):  # Number of pages Dec. 3 2024
             pages_urls.append(f"{officer_base_url}page/{i}/")
 
         # Custodial death reports
         custodial_base_url = f"{self.custodial_death_url}"
         pages_urls.append(custodial_base_url)
-        for i in range(2, 12):
+        for i in range(2, 13):  # Number of pages Dec. 3 2024
             pages_urls.append(f"{custodial_base_url}page/{i}/")
 
         return pages_urls
@@ -152,18 +152,16 @@ class Site:
                     asset_url = (
                         href if href.startswith("http") else f"{self.base_url}{href}"
                     )
-                    case_id = detail_link.get_text(strip=True)
-                    if not case_id:
-                        case_id = (
-                            asset_url.split("/")[-1].replace("-", " ").split(".")[0]
-                        )
+                    case_id = link.split("/")[-2] + asset_url.split("/")[-1]
 
                     ### TO DO: Need to refine this:
                     payload: MetadataDict = {
                         "asset_url": asset_url,
                         "case_id": case_id,
                         "name": asset_url.split("/")[-1],
-                        "title": detail_link.get("title", case_id),
+                        "title": detail_link.get(
+                            "title", case_id
+                        ),  # not sure how useful this title is...
                         "parent_page": link,
                     }
                     metadata.append(payload)
@@ -181,6 +179,14 @@ class Site:
         Returns:
             Path: Local cache path to the downloaded file.
         """
-        file_stem = f"{Path(page_url).stem}_index"
-        cache_path = self.cache.download(file_stem, page_url, "utf-8")
+        split_url = page_url.split("/")
+        file_stem = f"{split_url[-4]}_{split_url[-2]}_index"
+        cache_path = self.cache.download(
+            file_stem,
+            page_url,
+            "utf-8",
+            headers={
+                "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:132.0) Gecko/20100101 Firefox/132.0"
+            },
+        )
         return cache_path
