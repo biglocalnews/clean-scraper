@@ -80,7 +80,7 @@ class Site:
                 # Add missing extensions based on media type when needed
                 if "photo" in href.lower() or "images" in href.lower():
                     if not media_link.lower().endswith((".jpg", ".jpeg", ".png")):
-                        media_link += ".pdf"  # Default to .pdf for photos/images
+                        media_link += ".pdf"  # Default to .pdf for photos/images, I have checked and .pdf is the right extension for this.
                 elif "radio" in href.lower():
                     if not media_link.lower().endswith((".mp3", ".wav")):
                         media_link += ".mp3"  # Default to .mp3 for radio files
@@ -141,7 +141,7 @@ class Site:
                                 "notes": (
                                     "civic videoplayer"
                                     if "VID" in media_item["url"]
-                                    else "no remarks"
+                                    else ""
                                 )
                             },
                         }
@@ -165,11 +165,7 @@ class Site:
                         "title": text,
                         "parent_page": str(report_keywords["url"]),
                         "details": {
-                            "notes": (
-                                "civic videoplayer"
-                                if "VID" in asset_url
-                                else "no remarks"
-                            )
+                            "notes": ("civic videoplayer" if "VID" in asset_url else "")
                         },
                     }
                     if (
