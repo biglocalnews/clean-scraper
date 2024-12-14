@@ -94,7 +94,7 @@ class Runner:
         """
         state, slug = self._validate_agency_slug(agency_slug)
         # Define the path to the JSON file
-        json_path = Path.home() / f".clean-scraper/exports/{agency_slug}.json"
+        json_path = self.data_dir / f"{agency_slug}.json"
 
         # Load the JSON file
         with open(json_path) as f:
