@@ -56,7 +56,7 @@ class Site:
         html = self.cache.read(cache_path)
         soup = BeautifulSoup(html, "html.parser")
 
-        # Find all h2 tags with class 'h3'
+        # Find all h2 tags with class 'h3', where the links are located
         for h2 in soup.find_all("h2", class_="h3"):
             for link in h2.find_all("a", href=True):
                 href = link["href"]
@@ -90,8 +90,9 @@ class Site:
                 for link in h2.find_all("a", href=True):
                     href = link["href"]
                     if ".pdf" in href.lower():
-                        asset_url = urljoin(self.base_url, href.strip())
-                        file_name = Path(asset_url).name
+                        # Construct full URL and extract file name
+                        asset_url = urljoin(self.base_url, href.strip())  # Full URL
+                        file_name = Path(asset_url).name  # File name
 
                         payload: MetadataDict = {
                             "asset_url": asset_url,
@@ -101,7 +102,7 @@ class Site:
                             "parent_page": detail_page,
                         }
                         metadata.append(payload)
-            time.sleep(throttle)  # Respect throttle delay
+            time.sleep(throttle)
         return metadata
 
     def _download_index_page(self, page_url: str) -> Path:
