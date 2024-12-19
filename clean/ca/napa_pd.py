@@ -2,11 +2,24 @@ import re
 import time
 import urllib.parse
 from pathlib import Path
+import requests
+from email.message import Message
 
 from bs4 import BeautifulSoup
 
 from .. import utils
 from ..cache import Cache
+
+
+def get_file_extension(url):
+    headers = requests.head(url).headers
+    disp = headers.get("content-disposition", None)
+    if disp:
+        m = Message()
+        m['content-disposition'] = disp
+        return Path(m.get_filename()).suffix
+    else:
+        return ''
 
 
 class Site:
@@ -117,10 +130,14 @@ class Site:
                                     asset_link = f'https://www.cityofnapa.org{document.get("URL", "")}'
                                     name = document.get("DisplayName")
                                     parent_filename = document.get("parent_filename")
+                                    try:
+                                        extension = get_file_extension(asset_link)
+                                    except Exception as e:
+                                        extension = ''
                                     payload = {
                                         "asset_url": asset_link,
                                         "case_id": case_id,
-                                        "name": name,
+                                        "name": name + extension,
                                         "title": title,
                                         "parent_page": str(parent_filename),
                                     }
@@ -130,10 +147,14 @@ class Site:
                                     link_href = f"https://www.cityofnapa.org{link_href}"
                                 name = link_href.split("/")[-1]
                                 name = urllib.parse.unquote(name)
+                                try:
+                                    extension = get_file_extension(link_href)
+                                except Exception as e:
+                                    extension = ''
                                 payload = {
                                     "asset_url": link_href,
                                     "case_id": case_id,
-                                    "name": name,
+                                    "name": name + extension,
                                     "title": title,
                                     "parent_page": str(filename),
                                 }
