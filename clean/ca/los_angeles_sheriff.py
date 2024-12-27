@@ -24,6 +24,47 @@ class Site:
         cache.write_json and cache.read_json are using absolute paths.
         There is no standarized POST function yet.
         BLN request headers are not used, though those might break the scraper.
+
+    If this thing breaks again:
+        -- Open a browser. Find the new download page. Go into
+            the browser tools, network table, refresh, find the new JSON
+            URL. Copy that URL into JSONINDEXURL in the code below.
+        -- Open config/ca/los_angeles_sheriff.py.
+        -- In your browser, look at the request tab for that index JSON.
+            View the Raw version. Replace the payload. Near the end of the
+            payload section, reset "pageSize" to 9999. Save!
+        -- Go back to your browser. Find that index JSON in the network tab.
+            Right-click on it. Select copy, request headers. Paste this into
+            a new text editor tab. Kill the lines that begin with POST and
+            Content-Length. With your text editor in regex mode:
+                -- Search for ^ and replace with "
+                -- Search for :space and replace with ": "
+                -- Search for $ and replace with ",
+        -- Select that hunk of text. Switch back to the config file. Paste it
+            in as the *INDEX* request headers. Indent as needed.
+        -- Switch back to your web browser. In the Tools: Network panel, trash
+            the existing results.
+        -- Click on a case, any case. Your Network panel should light up. The first
+            file will have URL that starts with a bunch of hexadecimal characters
+            mixed with hyphens. Scroll down until you see a second similar filename.
+            Click on that.
+        -- Now right-click on the filename, pick out Copy, request headers.
+        -- Paste this into a new text editor window. As before, go and kill
+            the lines that begin with POST and Content-Length. With
+            your text editor in regex mode:
+            With your text editor in regex mode:
+                -- Search for ^ and replace with "
+                -- Search for :space and replace with ": "
+                -- Search for $ and replace with ",
+        -- Paste this into the config file as the *detail* request headers
+        -- Within your web browser for that same URL, click over to the "request"
+            tab within the network panel. Hit the "raw" button. Highlight everything.
+            Copy it into a new text editor. It should look something like this:  {"regarding":{"Id":"e2c722aa-d0e0-ee11-904d-001dd809c772","LogicalName":"sb1421_sb1421responsiverecords","Name":null,"KeyAttributes":[],"RowVersion":null},"sortExpression":"FileLeafRef ASC","page":1,"pageSize":4,"folderPath":""}
+        -- Change that pageSize value to 9990.
+        -- That ID value that begins with e2c, change that to IDGOESHERE. It may look something like {"regarding":{"Id":"IDGOESHERE","LogicalName":"sb1421_sb1421responsiverecords","Name":null,"KeyAttributes":[],"RowVersion":null},"sortExpression":"FileLeafRef ASC","page":1,"pageSize":9990,"folderPath":""}
+        -- In the config file, find the detail payload. Between the single quotes, paste in what you just did.
+
+
     """
 
     name = "Los Angeles Sheriff's Department"
@@ -38,7 +79,7 @@ class Site:
             "caseindex",
         ]  # What cached JSON files aren't page-level JSONs?
         self.base_url = "https://lasd.org/"
-        self.disclosure_url = "https://lasdsb1421.powerappsportals.us/"
+        self.disclosure_url = "https://lasdsb1421.powerappsportals.us/page/"
         self.data_dir = data_dir
         self.cache_dir = cache_dir
         self.cache = Cache(cache_dir)
@@ -59,7 +100,7 @@ class Site:
         return assetlist_filename
 
     def _fetch_index(self):
-        indexjsonurl = "https://lasdsb1421.powerappsportals.us/_services/entity-grid-data.json/f46b70cc-580b-4f1a-87c3-41deb48eb90d"
+        indexjsonurl = "https://lasdsb1421.powerappsportals.us/_services/entity-grid-data.json/7ebea772-1fab-4aa3-9c03-f3b767f83247"
         r = requests.post(
             indexjsonurl,
             headers=index_request_headers,
