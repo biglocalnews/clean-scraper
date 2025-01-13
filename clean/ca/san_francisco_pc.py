@@ -1,10 +1,10 @@
+import re
 import time
 from pathlib import Path
 from typing import List
-import re
-from urllib.parse import urlparse, parse_qs
+from urllib.parse import parse_qs, urlparse
 
-from bs4 import BeautifulSoup, Tag
+from bs4 import BeautifulSoup
 
 from .. import utils
 from ..cache import Cache
@@ -37,7 +37,8 @@ class Site:
 
     def scrape_meta(self, throttle: int = 0) -> Path:
         """
-        Gather metadata on downloadable files by following a two-step process:
+        Gather metadata on downloadable files by following a two-step process.
+
         1. Extract links from main pages.
         2. Extract metadata from detail pages.
 
@@ -61,7 +62,7 @@ class Site:
 
     def get_main_page_links(self) -> List[str]:
         """
-        Retrieves links from the main page of the site.
+        Retrieve links from the main page of the site.
 
         Returns:
             List[str]: A list of URLs for detailed pages.
@@ -86,7 +87,7 @@ class Site:
         self, main_links: List[str], throttle: int = 0
     ) -> List[MetadataDict]:
         """
-        Extracts detailed metadata from links on the main pages.
+        Extract detailed metadata from links on the main pages.
 
         Args:
             main_links (List[str]): A list of main page URLs.
@@ -174,12 +175,9 @@ class Site:
 
     def _download_index_page(self, page_url: str) -> Path:
         """
-            Download the index page for use for officer involved shootings;
-            use of force with great bodily injury/death;
-            & sustained complaints of sexual assault, dishonesty, excessive force, biased conduct, unlawful search or arrest,
-            and failing to intervene against another officer using excessive force.
+        Download the index page for use for officer involved shootings, use of force with great bodily injury/death, & sustained complaints of sexual assault, dishonesty, excessive force, biased conduct, unlawful search or arrest, and failing to intervene against another officer using excessive force.
 
-            Index pages link to child pages containing pdfs.
+        Index pages link to child pages containing pdfs.
 
         Returns:
             Local path of downloaded file
