@@ -74,6 +74,24 @@ You create a branch named `ca-100` and switch over to it (i.e. "check it out loc
 git switch -c ca-100
 ```
 
+## Credentials
+
+To manage sensitive credentials securely, we use a `.env` file. This file should be located in the `env/` directory and contain key-value pairs for your credentials. Copy the existing placeholders from `env.sample/` to get started
+
+### Example `.env` file
+
+```dotenv
+# env/.env
+KEYNAME1=value1
+KEYNAME2=value2
+```
+
+### Loading Credentials
+
+The project uses the `python-dotenv` library to load credentials from the `.env` file. Ensure you have the library installed:
+
+The credentials can then be accessed in the code using the get_credentials function from utils.py. Make sure to keep your .env file secure and do not commit it to version control.
+
 ## Perform your work
 
 Now you can begin your work. You can start editing the code on your computer, making changes and running scripts to iterate toward your goal.

@@ -1,7 +1,7 @@
+import re
 import time
 import urllib.parse
 from pathlib import Path
-from typing import List
 
 from bs4 import BeautifulSoup
 
@@ -88,14 +88,13 @@ class Site:
                         # Save links to files, videos, etc with relevant metadata
                         # for downstream processing
                         for link in links:
+                            # Remove pagination part from html_file name
                             payload: MetadataDict = {
                                 "title": title,
                                 "parent_page": str(html_file),
                                 "asset_url": link["href"].replace("\n", ""),
                                 "name": link.text.strip().replace("\n", ""),
-                                "case_id": str(html_file)
-                                .split(f"{self.agency_slug}/")[-1]
-                                .rstrip(".html"),
+                                "case_id": re.sub(r"_page=\d+$", "", html_file.stem),
                             }
                             metadata.append(payload)
         # Store the metadata in a JSON file in the data directory
@@ -104,7 +103,7 @@ class Site:
         # Return path to metadata file for downstream use
         return outfile
 
-    def _get_child_page(self, index_page: Path, throttle: int = 0) -> List[dict]:
+    def _get_child_page(self, index_page: Path, throttle: int = 0) -> list[dict]:
         """Get URLs for child pages from index pages."""
         html = self.cache.read(index_page)
         soup = BeautifulSoup(html, "html.parser")
@@ -142,7 +141,7 @@ class Site:
             child_pages.append(page_meta)
         return child_pages
 
-    def _get_index_page_urls(self, first_index_page: Path) -> List[str]:
+    def _get_index_page_urls(self, first_index_page: Path) -> list[str]:
         """Get the URLs for all index pages."""
         # Read the cached HTML file for home page
         html = self.cache.read(first_index_page)
