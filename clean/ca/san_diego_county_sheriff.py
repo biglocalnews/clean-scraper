@@ -1,9 +1,10 @@
-import logging
-from typing import List
-from pathlib import Path
-from playwright.sync_api import sync_playwright
-import time
 import json
+import logging
+import time
+from pathlib import Path
+from typing import List
+
+from playwright.sync_api import sync_playwright
 
 from .. import utils
 from ..cache import Cache
@@ -41,7 +42,8 @@ class Site:
 
     def scrape_meta(self, throttle: int = 0) -> Path:
         """
-        Gather metadata on downloadable files by following a two-step process:
+        Gather metadata on downloadable files by following a two-step process.
+
         1. Extract links from main pages.
         2. Extract metadata from detail pages.
 
@@ -129,7 +131,7 @@ class Site:
 
     def get_main_page_links(self) -> List[str]:
         """
-        Retrieves links from all paginated pages of the site using Playwright.
+        Retrieve links from all paginated pages of the site using Playwright.
 
         Filters links by clicking specific icons (paperclip).
 
@@ -183,7 +185,7 @@ class Site:
         self, main_links: List[str], throttle: int = 0
     ) -> List[MetadataDict]:
         """
-        Extracts detailed metadata from links on the main pages.
+        Extract detailed metadata from links on the main pages.
 
         Args:
             main_links (List[str]): A list of main page URLs.
@@ -192,7 +194,7 @@ class Site:
         Returns:
             List[MetadataDict]: A list of metadata dictionaries for downloadable resources.
         """
-        metadata = []
+        metadata: List[MetadataDict] = []
 
         with sync_playwright() as p:
             browser = p.chromium.launch(headless=True)
