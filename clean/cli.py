@@ -136,6 +136,12 @@ def scrape_meta(
     ),
     help="Set the logging level",
 )
+@click.option(
+    "--throttle",
+    "-t",
+    default=0,
+    help="Set throttle on scraping in seconds. Default is no delay on file downloads.",
+)
 def download_agency(
     agency: str,
     data_dir: Path,

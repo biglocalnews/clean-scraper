@@ -101,17 +101,17 @@ class Runner:
             data = json.load(f)
 
         # Create the download directory if it doesn't exist
-        download_dir = self.assets_dir / f"case_files/{slug}"
+        download_dir = self.assets_dir / f"{slug}"
         download_dir.mkdir(parents=True, exist_ok=True)
 
         # Download each asset
-        for item, index in data:
+        for item in data:
             asset_url = item.get("asset_url")
             if asset_url:
                 current_date = datetime.now().strftime("%Y%m%d")
                 local_filepath = (
                     download_dir
-                    / f"{current_date}/assets/{item.get('case_id')}/{item.get('name')}.pdf"
+                    / f"{current_date}/assets/{item.get('case_id')}/{item.get('name')}"
                 )
                 local_filepath.parent.mkdir(parents=True, exist_ok=True)
                 try:
@@ -123,7 +123,6 @@ class Runner:
                     with open(local_filepath, "wb") as file:
                         file.write(response.content)
                     logger.info(f"Downloaded {asset_url} to {local_filepath}")
-                    logger.info(f"asset_url {index} / {len(data)}")
                 except Exception as e:
                     logger.error(f"Failed to download asset {asset_url}: {e}")
 
