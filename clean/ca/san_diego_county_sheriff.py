@@ -72,6 +72,9 @@ class Site:
         return outfile
 
     def get_all_page_urls(self) -> List[str]:
+
+        ## TO DO: Print the urls that are being gathered in
+        # the get_all_page_urls function to see what is not working
         """
         Generate a list of all paginated URLs by navigating sequentially via the "Next" button.
 
