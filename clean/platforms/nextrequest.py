@@ -5,6 +5,9 @@ from time import sleep
 from typing import Dict, List
 from urllib.parse import parse_qs, urlparse
 
+from bs4 import BeautifulSoup
+import requests
+
 from .. import utils
 from ..cache import Cache
 
@@ -16,9 +19,41 @@ To-dos include:
           Recursion was not part of the plan.
 """
 
+def auth_nextrequest(base_url: str, username: str, password: str):
+    """Try to retrieve and return necessary authentication.
+    
+    Args:
+        base_url (str): The base URL of the NextRequest portal.
+            Example: https://mendocinocounty.nextrequest.com
+        username (str): The username for the NextRequest portal
+        password (str): The password for the NextRequest portal
+    Returns:
+        auth (dict): Dictionary of headers
+        
+    Notes:
+        Basic approach from https://github.com/danem/foiatool/blob/main/foiatool/apis/nextrequest.py
+    """
+    session = requests.Session()
+    session.headers["User-Agent"] = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36)"
+    login_url = f"{base_url}/users/sign_in"   
+    page = session.get(login_url)
+    soup = BeautifulSoup(page.content, "html5lib")
+    token = soup.find(attrs={"name": "csrf-token"})['content']
+    payload = {
+        "authenticity_token": token,
+        "user[email]": username,
+        "user[password]": password,
+        "user[remember_me]": "0",
+        "button": ""
+    }
+    session.headers.update({"x-csrf-token": token})
+    r = session.post(login_url, params=payload)
+    auth = session.headers
+    return(auth)
+
 
 def process_nextrequest(
-    base_directory: Path, start_url: str, force: bool = False, throttle: int = 2
+    base_directory: Path, start_url: str, force: bool = False, throttle: int = 2, auth: Dict = None
 ):
     """Turn a base filepath and NextRequest folder URL into saved data and parsed Metadata.
 
@@ -29,12 +64,13 @@ def process_nextrequest(
         start_url (str): The web page for the folder of NextRequest docs you want
         force (bool, default False): Overwrite file, if it exists? Otherwise, use cached version.
         throttle (int, default 2): Time to wait between calls
+        auth (dict, optional, default None): Dictionary of headers
     Returns:
         List(Metadata)
     """
     # Download data, if necessary
     filename, returned_json, file_needs_write = fetch_nextrequest(
-        base_directory, start_url, force, throttle=throttle
+        base_directory, start_url, force, throttle=throttle, auth=auth
     )
 
     # Write data, if necessary
@@ -49,7 +85,7 @@ def process_nextrequest(
 
 # Type base_directory to Path
 def fetch_nextrequest(
-    base_directory: Path, start_url: str, force: bool = False, throttle: int = 2
+    base_directory: Path, start_url: str, force: bool = False, throttle: int = 2, auth: Dict = None
 ):
     """
     Given a link to a NextRequest documents folder, return a proposed filename and the JSON contents.
@@ -58,6 +94,7 @@ def fetch_nextrequest(
         base_direcory (Path): The directory to save data in, e.g., cache/site-name/subpages
         start_url (str): The web page for the folder of NextRequest docs you want
         force (bool, default False): Overwrite file, if it exists? Otherwise, use cached version.
+        auth (dict, optional, default None): Dictionary of headers
     Returns:
         filename (str): Proposed filename; file NOT saved
         returned_json (None | dict): None if no rescrape needed; dict if JSON had to be downloaded
@@ -83,7 +120,10 @@ def fetch_nextrequest(
         # Remember pagination here!
         page_number = 1
         page_url = f"{json_url}{page_number}"
-        r = utils.get_url(page_url)
+        if auth:
+            r = utils.get_url(page_url, headers=auth)
+        else:
+            r = utils.get_url(page_url)
         if not r.ok:
             logger.error(f"Problem downloading {page_url}: {r.status_code}")
             returned_json: Dict = {}  # type: ignore
@@ -93,11 +133,15 @@ def fetch_nextrequest(
             # local_cache.write_json(filename,
             file_needs_write = True
             total_documents = returned_json[profile["tally_field"]]
-            for i, _entry in enumerate(returned_json["documents"]):
-                returned_json["documents"][i]["bln_page_url"] = page_url
-                returned_json["documents"][i]["bln_total_documents"] = total_documents
-            page_size = profile["page_size"]
-            max_pages = find_max_pages(total_documents, page_size)
+            if total_documents == 0:
+                logger.debug(f"No documnts found for processing! {returned_json}")
+                max_pages = 0
+            else:
+                for i, _entry in enumerate(returned_json["documents"]):
+                    returned_json["documents"][i]["bln_page_url"] = page_url
+                    returned_json["documents"][i]["bln_total_documents"] = total_documents
+                page_size = profile["page_size"]
+                max_pages = find_max_pages(total_documents, page_size)
             sleep(throttle)
             if total_documents > profile["doc_limit"]:
                 message = f"Request found with {total_documents:,} documents, exceeding limits. "
@@ -116,7 +160,10 @@ def fetch_nextrequest(
                         message += f"199 pages. Not trying to scrape {page_url}."
                         logger.warning(message)
                     else:
-                        r = utils.get_url(page_url)
+                        if auth:
+                            r = utils.get_url(page_url, headers=auth)
+                        else:
+                            r = utils.get_url(page_url)
                         if not r.ok:
                             logger.error(
                                 f"Problem downloading {page_url}: {r.status_code}"
