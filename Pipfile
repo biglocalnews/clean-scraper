@@ -42,6 +42,7 @@ us = "*"
 pytube = "*"
 clean-scraper = {file = ".", editable = true}
 python-dotenv = "*"
+yt-dlp = "*"
 
 [pipenv]
 allow_prereleases = false

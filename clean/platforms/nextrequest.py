@@ -277,9 +277,9 @@ def fingerprint_nextrequest(start_url: str):
     """
     line = None
     parsed_url = urlparse(start_url)
-    folder_id = parse_qs(parsed_url.query)["folder_filter"][0]
     if parsed_url.path == "/documents":  # LAPDish type
         base_url = f"{parsed_url.scheme}://{parsed_url.netloc}"
+        folder_id = parse_qs(parsed_url.query)["folder_filter"][0]
         line = {
             "site_type": "lapdish",  # LAPDish type
             "base_url": base_url,
@@ -313,14 +313,15 @@ def fingerprint_nextrequest(start_url: str):
         and parsed_url.path.split("/")[1] == "requests"
     ):
         base_url = f"{parsed_url.scheme}://{parsed_url.netloc}"
+        folder_id = urlparse(start_url).path.split("/")[2]
         line = {
             "site_type": "bartish",  # Bartish type
             "base_url": base_url,
-            "folder_id": urlparse(start_url).path.split("/")[2],
+            "folder_id": folder_id,
             "doc_limit": 9950,  # Max number of accessible docs in a folder
             "page_size": 25,
             "tally_field": "total_documents_count",
-            "json_url": f"{base_url}/client/request_documents?request_id={line['folder_id']}&page_number=",  # type: ignore
+            "json_url": f"{base_url}/client/request_documents?request_id={folder_id}&page_number=",  # type: ignore
             "details": {
                 "document_path": "ds!document_path",
                 "bogus_asset_url": "asset_url",
@@ -354,4 +355,4 @@ def fingerprint_nextrequest(start_url: str):
 
 
 def find_max_pages(item_count: int, page_size: int):
-    return ceil(item_count / page_size)  # type: ignore
+    return ceil(page_size / item_count)  # type: ignore

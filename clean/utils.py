@@ -14,6 +14,7 @@ from dotenv import load_dotenv
 from pytube import Playlist, YouTube  # type: ignore
 from retry import retry
 from typing_extensions import NotRequired
+from yt_dlp import YoutubeDL
 
 logger = logging.getLogger(__name__)
 
@@ -382,3 +383,46 @@ def get_cookies(url, user_agent="Big Local News (biglocalnews.org)", **kwargs):
 
     # Return the response
     return cookies
+
+
+def get_youtube_url_with_metadata(url: str) -> List[dict]:
+    """Return the set of stream URLs and their title to be downloaded.
+
+    Args:
+        url (str): The URL of the video or playlist to download
+    """
+    logger.debug(f"Requesting YouTube {url}")
+    video_info_list = []
+    cookie_file_path = os.path.join(os.getcwd(), "env", "youtube_cookie.txt")
+    ydl_opts = {
+        "cookiefile": cookie_file_path,
+        "no_warnings": True,
+        "format": "best",  # Get the best quality stream
+        "verbose": True,  # Enable detailed logs to check if cookies are read
+    }
+
+    try:
+        with YoutubeDL(ydl_opts) as ydl:
+            if is_youtube_playlist(url):
+                logger.debug("Detected YouTube playlist, fetching URLs")
+                playlist_info = ydl.extract_info(url, download=False)
+                for video in playlist_info["entries"]:
+                    stream_url = video.get("url")
+                    if stream_url:
+                        data = dict()
+                        data["name"] = video.get("title")
+                        data["url"] = stream_url
+                        video_info_list.append(data)
+            else:
+                logger.debug("Detected YouTube video, fetching URL")
+                video_info = ydl.extract_info(url, download=False)
+                stream_url = video_info.get("url")
+                if stream_url:
+                    data = dict()
+                    data["name"] = video_info.get("title")
+                    data["url"] = stream_url
+                    video_info_list.append(data)
+    except Exception as e:
+        logger.error(f"Error fetching YouTube content: {e}")
+
+    return video_info_list
