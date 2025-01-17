@@ -33,6 +33,7 @@ def auth_nextrequest(base_url: str, username: str, password: str):
     Notes:
         Basic approach from https://github.com/danem/foiatool/blob/main/foiatool/apis/nextrequest.py
     """
+    session = None
     session = requests.Session()
     session.headers["User-Agent"] = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36)"
     login_url = f"{base_url}/users/sign_in"   
@@ -49,6 +50,7 @@ def auth_nextrequest(base_url: str, username: str, password: str):
     session.headers.update({"x-csrf-token": token})
     r = session.post(login_url, params=payload)
     auth = session.headers
+    session = None
     return(auth)
 
 
@@ -130,11 +132,12 @@ def fetch_nextrequest(
             file_needs_write = False
         else:
             returned_json = r.json()
+            logger.debug(returned_json)
             # local_cache.write_json(filename,
             file_needs_write = True
             total_documents = returned_json[profile["tally_field"]]
             if total_documents == 0:
-                logger.debug(f"No documnts found for processing! {returned_json}")
+                logger.debug(f"No documents found for processing! {returned_json}")
                 max_pages = 0
             else:
                 for i, _entry in enumerate(returned_json["documents"]):
@@ -142,6 +145,7 @@ def fetch_nextrequest(
                     returned_json["documents"][i]["bln_total_documents"] = total_documents
                 page_size = profile["page_size"]
                 max_pages = find_max_pages(total_documents, page_size)
+                logger.debug(f"Total documents: {total_documents}. Page size: {page_size}. Max pages: {max_pages}.")
             sleep(throttle)
             if total_documents > profile["doc_limit"]:
                 message = f"Request found with {total_documents:,} documents, exceeding limits. "
@@ -402,4 +406,4 @@ def fingerprint_nextrequest(start_url: str):
 
 
 def find_max_pages(item_count: int, page_size: int):
-    return ceil(page_size / item_count)  # type: ignore
+    return ceil(item_count / page_size)  # type: ignore
