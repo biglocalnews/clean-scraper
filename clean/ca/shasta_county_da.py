@@ -3,7 +3,7 @@ from pathlib import Path
 from typing import List
 from urllib.parse import urljoin
 
-from bs4 import BeautifulSoup, Tag
+from bs4 import BeautifulSoup
 
 from .. import utils
 from ..cache import Cache
