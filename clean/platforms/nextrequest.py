@@ -5,8 +5,8 @@ from time import sleep
 from typing import Dict, List
 from urllib.parse import parse_qs, urlparse
 
-from bs4 import BeautifulSoup
 import requests
+from bs4 import BeautifulSoup
 
 from .. import utils
 from ..cache import Cache
@@ -19,43 +19,54 @@ To-dos include:
           Recursion was not part of the plan.
 """
 
-def auth_nextrequest(base_url: str, username: str, password: str):
+
+def auth_nextrequest(base_url: str, username: str, password: str, throttle: int = 2):
     """Try to retrieve and return necessary authentication.
-    
+
     Args:
         base_url (str): The base URL of the NextRequest portal.
             Example: https://mendocinocounty.nextrequest.com
         username (str): The username for the NextRequest portal
         password (str): The password for the NextRequest portal
     Returns:
-        auth (dict): Dictionary of headers
-        
+        auth (dict): Dictionary of 'headers' and 'cookies' dictionaries
+
     Notes:
         Basic approach from https://github.com/danem/foiatool/blob/main/foiatool/apis/nextrequest.py
     """
     session = None
     session = requests.Session()
-    session.headers["User-Agent"] = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36)"
-    login_url = f"{base_url}/users/sign_in"   
+    session.headers["User-Agent"] = (
+        "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36)"
+    )
+    login_url = f"{base_url}/users/sign_in"
     page = session.get(login_url)
+    sleep(throttle)
     soup = BeautifulSoup(page.content, "html5lib")
-    token = soup.find(attrs={"name": "csrf-token"})['content']
+    token = soup.find(attrs={"name": "csrf-token"})["content"]  # type: ignore
     payload = {
         "authenticity_token": token,
         "user[email]": username,
         "user[password]": password,
         "user[remember_me]": "0",
-        "button": ""
+        "button": "",
     }
-    session.headers.update({"x-csrf-token": token})
-    r = session.post(login_url, params=payload)
-    auth = session.headers
+    session.headers.update({"x-csrf-token": token})  # type: ignore
+    session.post(login_url, params=payload)
+    auth: dict = {}
+    auth["headers"] = dict(session.headers)
+    auth["cookies"] = dict(session.cookies.get_dict())
+    sleep(throttle)
     session = None
-    return(auth)
+    return auth  # Force conversion from case-insensitive dict
 
 
 def process_nextrequest(
-    base_directory: Path, start_url: str, force: bool = False, throttle: int = 2, auth: Dict = None
+    base_directory: Path,
+    start_url: str,
+    force: bool = False,
+    throttle: int = 2,
+    auth=None,  # type: ignore
 ):
     """Turn a base filepath and NextRequest folder URL into saved data and parsed Metadata.
 
@@ -66,7 +77,7 @@ def process_nextrequest(
         start_url (str): The web page for the folder of NextRequest docs you want
         force (bool, default False): Overwrite file, if it exists? Otherwise, use cached version.
         throttle (int, default 2): Time to wait between calls
-        auth (dict, optional, default None): Dictionary of headers
+        auth (dict, optional, default None): Dictionary of 'headers' and 'cookies' dictionaries
     Returns:
         List(Metadata)
     """
@@ -87,7 +98,11 @@ def process_nextrequest(
 
 # Type base_directory to Path
 def fetch_nextrequest(
-    base_directory: Path, start_url: str, force: bool = False, throttle: int = 2, auth: Dict = None
+    base_directory: Path,
+    start_url: str,
+    force: bool = False,
+    throttle: int = 2,
+    auth=None,
 ):
     """
     Given a link to a NextRequest documents folder, return a proposed filename and the JSON contents.
@@ -123,7 +138,15 @@ def fetch_nextrequest(
         page_number = 1
         page_url = f"{json_url}{page_number}"
         if auth:
-            r = utils.get_url(page_url, headers=auth)
+            if auth["headers"]:
+                headers = auth["headers"]
+            else:
+                headers = {}
+            if auth["cookies"]:
+                cookies = auth["cookies"]
+            else:
+                cookies = {}
+            r = utils.get_url(page_url, headers=headers, cookies=cookies)
         else:
             r = utils.get_url(page_url)
         if not r.ok:
@@ -132,8 +155,6 @@ def fetch_nextrequest(
             file_needs_write = False
         else:
             returned_json = r.json()
-            logger.debug(returned_json)
-            # local_cache.write_json(filename,
             file_needs_write = True
             total_documents = returned_json[profile["tally_field"]]
             if total_documents == 0:
@@ -142,10 +163,14 @@ def fetch_nextrequest(
             else:
                 for i, _entry in enumerate(returned_json["documents"]):
                     returned_json["documents"][i]["bln_page_url"] = page_url
-                    returned_json["documents"][i]["bln_total_documents"] = total_documents
+                    returned_json["documents"][i][
+                        "bln_total_documents"
+                    ] = total_documents
                 page_size = profile["page_size"]
                 max_pages = find_max_pages(total_documents, page_size)
-                logger.debug(f"Total documents: {total_documents}. Page size: {page_size}. Max pages: {max_pages}.")
+                logger.debug(
+                    f"Total documents: {total_documents}. Page size: {page_size}. Max pages: {max_pages}."
+                )
             sleep(throttle)
             if total_documents > profile["doc_limit"]:
                 message = f"Request found with {total_documents:,} documents, exceeding limits. "
@@ -165,7 +190,17 @@ def fetch_nextrequest(
                         logger.warning(message)
                     else:
                         if auth:
-                            r = utils.get_url(page_url, headers=auth)
+                            if auth["headers"]:
+                                headers = auth["headers"]
+                            else:
+                                headers = {}
+                            if auth["cookies"]:
+                                cookies = auth["cookies"]
+                            else:
+                                cookies = {}
+                            r = utils.get_url(
+                                page_url, headers=headers, cookies=cookies
+                            )
                         else:
                             r = utils.get_url(page_url)
                         if not r.ok:

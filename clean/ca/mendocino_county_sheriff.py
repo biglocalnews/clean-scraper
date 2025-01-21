@@ -4,7 +4,7 @@ from typing import Dict, List
 
 from .. import utils
 from ..cache import Cache
-from ..platforms.nextrequest import process_nextrequest, auth_nextrequest
+from ..platforms.nextrequest import auth_nextrequest, process_nextrequest
 
 # from ..utils import MetadataDict
 
@@ -52,15 +52,17 @@ class Site:
             Path: Local path of JSON file containing metadata on downloadable files
         """
         metadata: List = []
-        
-        for folder in ['20-30', '22-18', '23-27']:
+
+        for folder in ["22-18", "23-27", "20-30"]:
             username = utils.get_credentials(f"MENDOSO{folder}_USER")
             password = utils.get_credentials(f"MENDOSO{folder}_PASS")
             start_url = f"https://mendocinocounty.nextrequest.com/requests/{folder}"
-            auth = None
-            auth = auth_nextrequest(self.base_url, username, password)
-            logger.debug(auth)
-            local_metadata = process_nextrequest(self.subpages_dir, start_url, force=True, throttle=throttle, auth=auth)
+            auth: Dict = auth_nextrequest(self.base_url, username, password)
+            local_metadata = process_nextrequest(
+                self.subpages_dir, start_url, force=True, throttle=throttle, auth=auth
+            )
+            for i, _entry in enumerate(local_metadata):
+                local_metadata[i]["auth"] = auth
             metadata.extend(local_metadata)
 
         json_filename = self.data_dir / (self.site_slug + ".json")
