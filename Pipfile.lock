@@ -202,10 +202,6 @@
             "markers": "python_version >= '3.7'",
             "version": "==3.4.1"
         },
-        "clean-scraper": {
-            "editable": true,
-            "file": "file:///Users/irenecasadosanchez/Desktop/code/bln/clean-scraper"
-        },
         "click": {
             "hashes": [
                 "sha256:63c132bbbed01578a06712a2d1f497bb62d9c1c0d329b7903a866228027263b2",
