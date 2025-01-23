@@ -1,19 +1,11 @@
-<<<<<<< HEAD
+import csv
 import json
 import logging
+import re
 import time
 from pathlib import Path
 from typing import List
 
-=======
-import csv
-import logging
-import time
-import json
-import re
-from typing import List, Dict
-from pathlib import Path
->>>>>>> 140792a (scraper done)
 from playwright.sync_api import sync_playwright
 
 from .. import utils
@@ -52,14 +44,7 @@ class Site:
 
     def scrape_meta(self, throttle: int = 4) -> Path:
         """
-<<<<<<< HEAD
-        Gather metadata on downloadable files by following a two-step process.
-
-        1. Extract links from main pages.
-        2. Extract metadata from detail pages.
-=======
         Download CSV file, extract request numbers, and scrape metadata.
->>>>>>> 140792a (scraper done)
 
         Args:
             throttle (int): Number of seconds to wait between requests. Defaults to 4.
@@ -123,7 +108,7 @@ class Site:
                 logging.info(f"CSV file downloaded to {download_path}.")
 
                 # Read and parse the CSV file
-                with open(download_path, "r", encoding="utf-8") as f:
+                with open(download_path, encoding="utf-8") as f:
                     reader = csv.DictReader(f)
                     request_numbers = [row["Request Number"] for row in reader]
 
@@ -137,98 +122,11 @@ class Site:
             finally:
                 browser.close()
 
-<<<<<<< HEAD
-                    # Check for the "Next" button
-                    next_button = page.locator("#gridView_DXPagerBottom_PBN")
-                    if (
-                        next_button.is_visible()
-                        and next_button.get_attribute("aria-disabled") != "true"
-                    ):
-                        logging.debug("Clicking the 'Next' button.")
-
-                        # Ensure the button is in view and click it
-                        next_button.scroll_into_view_if_needed()
-                        next_button.click()
-
-                        # Wait for the next page to load
-                        page.wait_for_load_state("networkidle", timeout=10000)
-                    else:
-                        logging.info("No more 'Next' button. Pagination complete.")
-                        break
-
-                except Exception as e:
-                    logging.warning(f"Error while navigating: {e}")
-                    break
-
-            browser.close()
-
-        logging.info(f"Collected URLs for {len(pages_urls)} pages.")
-        return pages_urls
-
-    def get_main_page_links(self) -> List[str]:
-        """
-        Retrieve links from all paginated pages of the site using Playwright.
-
-        Filters links by clicking specific icons (paperclip).
-
-        Returns:
-            List[str]: A list of URLs for detailed pages.
-        """
-        page_urls = self.get_all_page_urls()
-        main_links = []
-
-        with sync_playwright() as p:
-            browser = p.chromium.launch(headless=True)
-            page = browser.new_page()
-
-            for page_url in page_urls:
-                logging.debug(f"Processing page: {page_url}")
-                page.goto(page_url)
-                try:
-                    page.wait_for_selector("fa fa-paperclip", timeout=10000)
-                except Exception as e:
-                    logging.warning(f"No paperclip icons found on page {page_url}: {e}")
-                    continue
-
-                # Click the paperclip icon to access detailed pages
-                icons = page.locator("fa fa-paperclip")
-                for i in range(icons.count()):
-                    try:
-                        icons.nth(i).scroll_into_view_if_needed()
-                        icons.nth(i).click(timeout=5000)
-
-                        # Wait for the new page to load
-                        page.wait_for_load_state("networkidle", timeout=5000)
-
-                        # Add the new page URL to main_links
-                        main_links.append(page.url)
-
-                        # Navigate back to the main page
-                        page.go_back()
-                        page.wait_for_load_state("networkidle", timeout=5000)
-
-                    except Exception as e:
-                        logging.warning(
-                            f"Failed to click paperclip icon on page {page_url}: {e}"
-                        )
-
-            browser.close()
-
-        logging.info(f"Extracted {len(main_links)} main page links.")
-        return main_links
-
-    def get_detail_page_links(
-        self, main_links: List[str], throttle: int = 0
-    ) -> List[MetadataDict]:
-        """
-        Extract detailed metadata from links on the main pages.
-=======
     def scrape_for_request_numbers(
         self, request_numbers: List[str], throttle: int
     ) -> List[MetadataDict]:
         """
         Scrape data for each request number.
->>>>>>> 140792a (scraper done)
 
         Args:
             request_numbers (List[str]): List of request numbers to search for.
@@ -293,7 +191,7 @@ class Site:
         Returns:
             List[MetadataDict]: A list of metadata dictionaries from the detail page.
         """
-        page_metadata = []
+        page_metadata: List[MetadataDict] = []
 
         try:
             # Click the arrow icon to go to the detail page
