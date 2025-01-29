@@ -71,7 +71,7 @@ class Site:
         raw_data = self.cache.read_json(master_index_file)  # type: ignore
         sleep(throttle)
 
-        folders_wanted: Set = set()
+        folders_wanted: Set = set()  # Find NextRequest "folders" to scrape
         for entry in raw_data["requests"]:  # type: ignore
             folders_wanted.add(
                 "https://cityofsantaanaca.nextrequest.com/requests/" + entry["id"]
@@ -79,6 +79,7 @@ class Site:
 
         metadata: List = []
 
+        # Start grabbing NextRequst "folders"
         for start_url in folders_wanted:
             force = True  # Always get a fresh copy
             local_metadata = process_nextrequest(
