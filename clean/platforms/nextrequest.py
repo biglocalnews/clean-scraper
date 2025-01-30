@@ -355,4 +355,4 @@ def fingerprint_nextrequest(start_url: str):
 
 
 def find_max_pages(item_count: int, page_size: int):
-    return ceil(page_size / item_count)  # type: ignore
+    return ceil(item_count / page_size)  # type: ignore
