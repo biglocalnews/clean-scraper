@@ -5,6 +5,9 @@ from time import sleep
 from typing import Dict, List
 from urllib.parse import parse_qs, urlparse
 
+import requests
+from bs4 import BeautifulSoup
+
 from .. import utils
 from ..cache import Cache
 
@@ -17,8 +20,53 @@ To-dos include:
 """
 
 
+def auth_nextrequest(base_url: str, username: str, password: str, throttle: int = 2):
+    """Try to retrieve and return necessary authentication.
+
+    Args:
+        base_url (str): The base URL of the NextRequest portal.
+            Example: https://mendocinocounty.nextrequest.com
+        username (str): The username for the NextRequest portal
+        password (str): The password for the NextRequest portal
+    Returns:
+        auth (dict): Dictionary of 'headers' and 'cookies' dictionaries
+
+    Notes:
+        Basic approach from https://github.com/danem/foiatool/blob/main/foiatool/apis/nextrequest.py
+    """
+    session = None
+    session = requests.Session()
+    session.headers["User-Agent"] = (
+        "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36)"
+    )
+    login_url = f"{base_url}/users/sign_in"
+    page = session.get(login_url)
+    sleep(throttle)
+    soup = BeautifulSoup(page.content, "html5lib")
+    token = soup.find(attrs={"name": "csrf-token"})["content"]  # type: ignore
+    payload = {
+        "authenticity_token": token,
+        "user[email]": username,
+        "user[password]": password,
+        "user[remember_me]": "0",
+        "button": "",
+    }
+    session.headers.update({"x-csrf-token": token})  # type: ignore
+    session.post(login_url, params=payload)
+    auth: dict = {}
+    auth["headers"] = dict(session.headers)
+    auth["cookies"] = dict(session.cookies.get_dict())
+    sleep(throttle)
+    session = None
+    return auth  # Force conversion from case-insensitive dict
+
+
 def process_nextrequest(
-    base_directory: Path, start_url: str, force: bool = False, throttle: int = 2
+    base_directory: Path,
+    start_url: str,
+    force: bool = False,
+    throttle: int = 2,
+    auth=None,  # type: ignore
 ):
     """Turn a base filepath and NextRequest folder URL into saved data and parsed Metadata.
 
@@ -29,12 +77,13 @@ def process_nextrequest(
         start_url (str): The web page for the folder of NextRequest docs you want
         force (bool, default False): Overwrite file, if it exists? Otherwise, use cached version.
         throttle (int, default 2): Time to wait between calls
+        auth (dict, optional, default None): Dictionary of 'headers' and 'cookies' dictionaries
     Returns:
         List(Metadata)
     """
     # Download data, if necessary
     filename, returned_json, file_needs_write = fetch_nextrequest(
-        base_directory, start_url, force, throttle=throttle
+        base_directory, start_url, force, throttle=throttle, auth=auth
     )
 
     # Write data, if necessary
@@ -49,7 +98,11 @@ def process_nextrequest(
 
 # Type base_directory to Path
 def fetch_nextrequest(
-    base_directory: Path, start_url: str, force: bool = False, throttle: int = 2
+    base_directory: Path,
+    start_url: str,
+    force: bool = False,
+    throttle: int = 2,
+    auth=None,
 ):
     """
     Given a link to a NextRequest documents folder, return a proposed filename and the JSON contents.
@@ -58,6 +111,7 @@ def fetch_nextrequest(
         base_direcory (Path): The directory to save data in, e.g., cache/site-name/subpages
         start_url (str): The web page for the folder of NextRequest docs you want
         force (bool, default False): Overwrite file, if it exists? Otherwise, use cached version.
+        auth (dict, optional, default None): Dictionary of headers
     Returns:
         filename (str): Proposed filename; file NOT saved
         returned_json (None | dict): None if no rescrape needed; dict if JSON had to be downloaded
@@ -83,21 +137,40 @@ def fetch_nextrequest(
         # Remember pagination here!
         page_number = 1
         page_url = f"{json_url}{page_number}"
-        r = utils.get_url(page_url)
+        if auth:
+            if auth["headers"]:
+                headers = auth["headers"]
+            else:
+                headers = {}
+            if auth["cookies"]:
+                cookies = auth["cookies"]
+            else:
+                cookies = {}
+            r = utils.get_url(page_url, headers=headers, cookies=cookies)
+        else:
+            r = utils.get_url(page_url)
         if not r.ok:
             logger.error(f"Problem downloading {page_url}: {r.status_code}")
             returned_json: Dict = {}  # type: ignore
             file_needs_write = False
         else:
             returned_json = r.json()
-            # local_cache.write_json(filename,
             file_needs_write = True
             total_documents = returned_json[profile["tally_field"]]
-            for i, _entry in enumerate(returned_json["documents"]):
-                returned_json["documents"][i]["bln_page_url"] = page_url
-                returned_json["documents"][i]["bln_total_documents"] = total_documents
-            page_size = profile["page_size"]
-            max_pages = find_max_pages(total_documents, page_size)
+            if total_documents == 0:
+                logger.debug(f"No documents found for processing! {returned_json}")
+                max_pages = 0
+            else:
+                for i, _entry in enumerate(returned_json["documents"]):
+                    returned_json["documents"][i]["bln_page_url"] = page_url
+                    returned_json["documents"][i][
+                        "bln_total_documents"
+                    ] = total_documents
+                page_size = profile["page_size"]
+                max_pages = find_max_pages(total_documents, page_size)
+                logger.debug(
+                    f"Total documents: {total_documents}. Page size: {page_size}. Max pages: {max_pages}."
+                )
             sleep(throttle)
             if total_documents > profile["doc_limit"]:
                 message = f"Request found with {total_documents:,} documents, exceeding limits. "
@@ -116,7 +189,20 @@ def fetch_nextrequest(
                         message += f"199 pages. Not trying to scrape {page_url}."
                         logger.warning(message)
                     else:
-                        r = utils.get_url(page_url)
+                        if auth:
+                            if auth["headers"]:
+                                headers = auth["headers"]
+                            else:
+                                headers = {}
+                            if auth["cookies"]:
+                                cookies = auth["cookies"]
+                            else:
+                                cookies = {}
+                            r = utils.get_url(
+                                page_url, headers=headers, cookies=cookies
+                            )
+                        else:
+                            r = utils.get_url(page_url)
                         if not r.ok:
                             logger.error(
                                 f"Problem downloading {page_url}: {r.status_code}"
@@ -279,16 +365,17 @@ def fingerprint_nextrequest(start_url: str):
     parsed_url = urlparse(start_url)
     if parsed_url.path == "/documents":  # LAPDish type
         base_url = f"{parsed_url.scheme}://{parsed_url.netloc}"
+        folder_id = parse_qs(parsed_url.query)["folder_filter"][0]
         line = {
             "site_type": "lapdish",  # LAPDish type
             "base_url": base_url,
-            "folder_id": parse_qs(parsed_url.query)["folder_filter"][0],
+            "folder_id": folder_id,
             "page_size": 50,
             "doc_limit": 9950,  # Max number of accessible docs in a folder
             "tally_field": "total_count",
             "bln_page_url": "bln_page_url",
             "bln_total_documents": "bln_total_documents",
-            "json_url": f"{base_url}/client/documents?sort_field=count&sort_order=desc&page_size=50&folder_filter={line['folder_id']}&page_number=",  # type: ignore
+            "json_url": f"{base_url}/client/documents?sort_field=count&sort_order=desc&page_size=50&folder_filter={folder_id}&page_number=",  # type: ignore
             "details": {
                 "document_path": "document_path",
                 "description": "description",
@@ -312,14 +399,15 @@ def fingerprint_nextrequest(start_url: str):
         and parsed_url.path.split("/")[1] == "requests"
     ):
         base_url = f"{parsed_url.scheme}://{parsed_url.netloc}"
+        folder_id = urlparse(start_url).path.split("/")[2]
         line = {
             "site_type": "bartish",  # Bartish type
             "base_url": base_url,
-            "folder_id": urlparse(start_url).path.split("/")[2],
+            "folder_id": folder_id,
             "doc_limit": 9950,  # Max number of accessible docs in a folder
             "page_size": 25,
             "tally_field": "total_documents_count",
-            "json_url": f"{base_url}/client/request_documents?request_id={line['folder_id']}&page_number=",  # type: ignore
+            "json_url": f"{base_url}/client/request_documents?request_id={folder_id}&page_number=",  # type: ignore
             "details": {
                 "document_path": "ds!document_path",
                 "bogus_asset_url": "asset_url",
@@ -353,4 +441,4 @@ def fingerprint_nextrequest(start_url: str):
 
 
 def find_max_pages(item_count: int, page_size: int):
-    return ceil(item_count, page_size)  # type: ignore
+    return ceil(item_count / page_size)  # type: ignore
