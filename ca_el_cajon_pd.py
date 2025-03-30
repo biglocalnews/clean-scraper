@@ -5,6 +5,7 @@ import re
 import time
 from pathlib import Path
 from typing import List
+from urllib.parse import urlparse, parse_qs
 
 from bs4 import BeautifulSoup
 from playwright.sync_api import sync_playwright
@@ -20,9 +21,16 @@ logging.basicConfig(
 
 logger = logging.getLogger(__name__)
 
+slug = "ca_el_cajon_pd/"
+
 data_dir: Path = utils.CLEAN_DATA_DIR
 cache_dir: Path = utils.CLEAN_CACHE_DIR
 cache = Cache(cache_dir)
+
+production_dir = data_dir / slug
+
+# data_dir: C:\Users\stuck\.clean-scraper\exports
+# cache_dir: C:\Users\stuck\.clean-scraper\cache
 
 with sync_playwright() as p:
     browser = p.chromium.launch(headless=False)
@@ -37,7 +45,7 @@ with sync_playwright() as p:
     page.wait_for_load_state("networkidle", timeout=2000)
 
     page.locator("#middle").get_by_role("link", name="Police Documents").click()
-    page.wait_for_load_state("networkidle", timeout=2000)
+    page.wait_for_load_state("networkidle", timeout=10000)
 
     casenumbers = []
     soup = BeautifulSoup(page.content(), features="lxml")
@@ -53,14 +61,14 @@ with sync_playwright() as p:
 
     metadata = []
 
-    for i, casenumber in enumerate(casenumbers[0]):
-        logger.debug(
-            f"Hunting docs for case {i}/{len(casenumbers):,} in {casenumber}"
-        )
-        searchtext = "SB1421 Peace Officer Release of Records"
-        page.type("input#text.text", searchtext)
+    for i, casenumber in enumerate(casenumbers):
+        logger.debug(f"Hunting docs for case {i+1}/{len(casenumbers):,} in {casenumber}")
         page.locator("select#_EC_CaseNumber").select_option(casenumber)
-        page.locator("input.search").click()
+        searchtext = "SB1421 Peace Officer Release of Records"
+        # page.type("input#text.text", searchtext)
+        page.locator("input#text").fill(searchtext)
+        # page.locator("input.search").click()
+        page.get_by_role("button", name="Search").first.click()
 
         page.wait_for_load_state("networkidle", timeout=2000)
 
@@ -69,11 +77,38 @@ with sync_playwright() as p:
 
         soup = BeautifulSoup(page.content(), features="lxml")
         pagebanner = soup.find("span", class_="pagebanner")
-        if "found, displaying all items." not in pagebanner:
-            logger.error(f"!!!Missing pagination for case {casenumber}")
+        if not pagebanner:
+            logger.debug("pagebanner not found")
+        elif "found, displaying all items." not in pagebanner.text:
+            logger.error("!!!Missing pagination for case {casenumber}")
 
-        # Prep the page in a couple ways
+        # Convert all the third column links to a "view image" 
         page.locator("u.tableHeaderAction#addAllToPdf").click()
+        
+        mytable = soup.find(id='searchResultsTable')
+
+        for row in mytable.find_all("tr")[1:]:
+            line = {}
+            firstcell = row.find_all("td")[0]
+            secondcell = row.find_all("td")[1]
+            thirdcell = row.find_all("td")[2]
+            line['asset_url'] = "https://elcajoncatcm.tylerhost.net/tylercm4992prod/eagleweb/" + thirdcell.find("a")['href']
+            queries = parse_qs(urlparse(line['asset_url']).query)    
+            line['name'] = queries['docName'][0]
+            line['parent_page'] = case_search_url
+            line['title'] = firstcell.text.replace("Peace Officer Release of Records", "").strip()
+            line['case_id'] = casenumber
+            line['details'] = {
+                "docid": queries['id'][0],
+                "parentdoc": queries['parent'][0]
+            }
+            details = secondcell.find("a").contents
+            for deeti in range(0, len(details)//3):
+                deettitle = details[deeti*3].text.split(":")[0].strip().lower().replace(" ", "_")
+                deetcontents = details[deeti*3 + 1].text.strip()
+                line['details'][deettitle] = deetcontents
+            metadata.append(line)                
+
 
         # <u class="tableHeaderAction" id="addAllToPdf">Add All to My Images</u>
 
@@ -91,9 +126,6 @@ with open(outfile, "w", encoding="utf-8") as f:
 
 logging.info(f"Metadata written to {outfile}")
 #   return outfile
-
-
-
 
 
 class Site:
