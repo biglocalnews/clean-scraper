@@ -14,6 +14,23 @@ from clean import utils
 from clean.cache import Cache
 from clean.utils import MetadataDict
 
+"""
+QA and to-do:
+-- Searching with no text gets more records than searching with the string that starts with SB1421. Kill the search text for now, but at some point should probably test with both and see if anything's missing.
+-- Should probably build out a function that will only begin scraping metadata if the metadata file doesn't already exist? No sense in rescraping metadata each time we're trying to fix a bug in the asset download phase. Probably.
+-- Metadata needs a check to see if a file suffix is added on; different site endpoints give different file extensions in some cases, e.g., .pdf.pdf. The full scrape should fix the metadata where possible.
+-- Asset download functionality should see if there's a filename starting with whatever fragment is in the asset_url.
+-- Need to handle that one DOCX differently for asset download.
+-- Stop adding all the URLs to the "to be downloaded" queue thing, then go through and see if any non-PDF classes show up in any of those files. Store the class, if available. Probably not for the DOCX.
+-- If there's any hint of non-PDF files with the one exception, asset handling will likely need to change
+
+
+QA done:
+"""
+
+
+
+
 # Configure logging
 logging.basicConfig(
     level=logging.DEBUG, format="%(asctime)s - %(levelname)s - %(message)s"
