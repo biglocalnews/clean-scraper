@@ -21,13 +21,11 @@ logging.basicConfig(
 
 logger = logging.getLogger(__name__)
 
-slug = "ca_el_cajon_pd/"
+slug = "ca_el_cajon_pd"
 
 data_dir: Path = utils.CLEAN_DATA_DIR
 cache_dir: Path = utils.CLEAN_CACHE_DIR
 cache = Cache(cache_dir)
-
-production_dir = data_dir / slug
 
 # data_dir: C:\Users\stuck\.clean-scraper\exports
 # cache_dir: C:\Users\stuck\.clean-scraper\cache
@@ -75,41 +73,77 @@ with sync_playwright() as p:
         # Now we should be at the case index page.
         # Need to check to see if it's paginated.
 
-        soup = BeautifulSoup(page.content(), features="lxml")
-        pagebanner = soup.find("span", class_="pagebanner")
-        if not pagebanner:
-            logger.debug("pagebanner not found")
-        elif "found, displaying all items." not in pagebanner.text:
-            logger.error("!!!Missing pagination for case {casenumber}")
+        pagescomplete = False
 
-        # Convert all the third column links to a "view image" 
-        page.locator("u.tableHeaderAction#addAllToPdf").click()
+        while not pagescomplete:
+
+            soup = BeautifulSoup(page.content(), features="lxml")
+
+            # Convert all the third column links to a "view image" 
+            page.locator("u.tableHeaderAction#addAllToPdf").click()
+            
+            mytable = soup.find(id='searchResultsTable')
+
+            for row in mytable.find_all("tr")[1:]:
+                line = {}
+                firstcell = row.find_all("td")[0]
+                secondcell = row.find_all("td")[1]
+                thirdcell = row.find_all("td")[2]
+                line['asset_url'] = "https://elcajoncatcm.tylerhost.net/tylercm4992prod/eagleweb/" + thirdcell.find("a")['href']
+                linetitle = firstcell.text.replace("Peace Officer Release of Records", "").strip()
+
+                # counterexample on docName / asset URL: 10006643  "Face Page"
+                queries = parse_qs(urlparse(line['asset_url']).query)
+                if "docName" in queries:
+                    line['name'] = queries['docName'][0]
+                else:
+                    logger.debug(f"Missing docName for case {casenumber}, {linetitle}")
+                    line['name'] = f"TBD {linetitle}"
+
+                line['parent_page'] = case_search_url
+                line['title'] = linetitle
+                line['case_id'] = casenumber
+                line['details'] = {}
+                
+                if "id" in queries:
+                    line['details']["docid"]: queries['id'][0]
+                    line['details']["parentdoc"]: queries['parent'][0]
+                else:
+                    logger.debug(f"Missing ID for case {casenumber}, {linetitle}")
+                    
+                details = secondcell.find("a").contents
+                for deeti in range(0, len(details)//3):
+                    deettitle = details[deeti*3].text.split(":")[0].strip().lower().replace(" ", "_")
+                    deetcontents = details[deeti*3 + 1].text.strip()
+                    line['details'][deettitle] = deetcontents
+                metadata.append(line)
+
+            pagebanner = soup.find("span", class_="pagebanner")
+            if not pagebanner:
+                logger.error("pagebanner not found")
+            elif "found, displaying all items." in pagebanner.text:
+                pagescomplete = True
+            else:
+                pagebannertext = pagebanner.text.strip().split()
+                if pagebannertext[0] == pagebannertext[-1].replace(".", ""):
+                    logger.debug(f"Final page detected for case {casenumber}")
+                    # 106 items found, displaying 101 to 106.
+                    pagescomplete = True
+                else:
+                    logger.debug(f"Fetching another page for case {casenumber}")
+                    page.wait_for_timeout(2000)    # Their server suuucks
+                    page.get_by_text("Next", exact=True).first.click()
+                    page.wait_for_load_state("networkidle", timeout=2000)
+
+        page.wait_for_timeout(500)    # Their server suuucks
+
+        page.goto(case_search_url)
         
-        mytable = soup.find(id='searchResultsTable')
+        page.wait_for_load_state("networkidle", timeout=2000)
 
-        for row in mytable.find_all("tr")[1:]:
-            line = {}
-            firstcell = row.find_all("td")[0]
-            secondcell = row.find_all("td")[1]
-            thirdcell = row.find_all("td")[2]
-            line['asset_url'] = "https://elcajoncatcm.tylerhost.net/tylercm4992prod/eagleweb/" + thirdcell.find("a")['href']
-            queries = parse_qs(urlparse(line['asset_url']).query)    
-            line['name'] = queries['docName'][0]
-            line['parent_page'] = case_search_url
-            line['title'] = firstcell.text.replace("Peace Officer Release of Records", "").strip()
-            line['case_id'] = casenumber
-            line['details'] = {
-                "docid": queries['id'][0],
-                "parentdoc": queries['parent'][0]
-            }
-            details = secondcell.find("a").contents
-            for deeti in range(0, len(details)//3):
-                deettitle = details[deeti*3].text.split(":")[0].strip().lower().replace(" ", "_")
-                deetcontents = details[deeti*3 + 1].text.strip()
-                line['details'][deettitle] = deetcontents
-            metadata.append(line)                
-
-
+        
+        
+    
         # <u class="tableHeaderAction" id="addAllToPdf">Add All to My Images</u>
 
 
@@ -118,52 +152,12 @@ with sync_playwright() as p:
 # CDP implementation example here https://gist.github.com/mezhgano/bd9fee908378ee87589b727906da55db
 
 
-metadata = "beer"
-
-outfile = self.data_dir.joinpath(f"{self.agency_slug}.json")
-with open(outfile, "w", encoding="utf-8") as f:
-    json.dump(metadata, f, indent=2)
+outfile = data_dir.joinpath(f"{slug}.json")
+cache.write_json(outfile, metadata)
+#with open(outfile, "w", encoding="utf-8") as f:
+#    json.dump(metadata, f, indent=2)
 
 logging.info(f"Metadata written to {outfile}")
-#   return outfile
-
-
-class Site:
-    """Scrape file metadata for the El Cajon Police Department."""
-
-    name = "El Cajon Police Department"
-
-    def __init__(
-        self,
-        data_dir: Path = utils.CLEAN_DATA_DIR,
-        cache_dir: Path = utils.CLEAN_CACHE_DIR,
-    ):
-        """Initialize a new instance."""
-        self.data_dir = data_dir
-        self.cache_dir = cache_dir
-        self.cache = Cache(cache_dir)
-
-    @property
-    def agency_slug(self) -> str:
-        """Construct the agency slug."""
-        mod = Path(__file__)
-        state_postal = mod.parent.stem
-        return f"{state_postal}_{mod.stem}"  # e.g., ca_san_diego_county_sheriff
-
-    def scrape_meta(self, throttle: int = 4) -> Path:
-        """
-        Download CSV file, extract request numbers, and scrape metadata.
-
-        Args:
-            throttle (int): Number of seconds to wait between requests. Defaults to 4.
-
-        Returns:
-            Path: Local path of JSON file containing metadata.
-        """
-        logging.info("Starting metadata scraping process.")
-
-        # https://github.com/biglocalnews/clean-scraper/blob/elcajon-194/elcajon.ipynb
-
 
 """
 
