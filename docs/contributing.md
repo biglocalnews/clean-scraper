@@ -191,6 +191,11 @@ The metadata file should contain an array of one or more objects with the below 
     - Complete date: YYYY-MM-DD (eg 1997-07-16)
     - Complete date plus hours and minutes: YYYY-MM-DDThh:mmTZD (eg 1997-07-16T19:20+01:00)
     - Complete date plus hours, minutes and seconds: YYYY-MM-DDThh:mm:ssTZD (eg 1997-07-16T19:20:30+01:00)
+- `auth`: (optional) Details needed to handle authentication to download assets, on a per-asset basis. Per-project authentication methods can be handled through agency-level files in state-level `config` folders.
+  - `headers`: (optional) Dictionary of request headers needed to download asset.
+  - `cookies`: (optional) Dictionary of cookies to be sent with request
+  - `method`: (optional) Text of either `POST` or `GET`
+  - `payload`: (optional) Payload to be sent with POST requests
 
 Below is an example from `ca_san_diego_pd.json` metadata JSON.
 
@@ -212,6 +217,8 @@ Below is an example from `ca_san_diego_pd.json` metadata JSON.
     },
 ]
 ```
+
+For an example of authentication handling, see `ca_mendocino_county_sheriff.json`.
 
 #### Assets
 
@@ -359,3 +366,8 @@ git push origin your-branch-name
 The final step is to submit a [pull request](https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/proposing-changes-to-your-work-with-pull-requests/about-pull-requests) to the main respository, asking the maintainers to consider integrating your patch.
 
 GitHub has [a short guide](https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/proposing-changes-to-your-work-with-pull-requests/creating-a-pull-request) that can walk you through the process. You should tag your issue number in the request so that it gets linked in GitHub's system.
+
+
+## Zen Rows Use
+
+Some sites uses zenrows API, click [here](https://app.zenrows.com/login) to sign up for an account and get a ZENROWS_KEY which you can add to your .env file
