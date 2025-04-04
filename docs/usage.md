@@ -57,6 +57,6 @@ Options:
 
 Commands:
   list            List all available agencies and their slugs.
-  scrape-meta     Command-line interface for generating metadata CSV about...
+  scrape-meta     Command-line interface for generating metadata JSON about...
   download_agency Downloads assets retrieved in scrape-meta
 ```
