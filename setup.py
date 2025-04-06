@@ -59,8 +59,21 @@ def parse_requirements(filename):
     return requirements
 
 
+def get_version():
+    """Get the version using setuptools_scm or fallback to a default version."""
+    try:
+        from setuptools_scm import get_version as scm_get_version
+
+        return scm_get_version(
+            version_scheme=version_scheme, local_scheme=local_version
+        )
+    except (ImportError, LookupError):
+        return "0.1.0"
+
+
 setup(
     name="clean-scraper",
+    version=get_version(),
     description="Command-line interface for downloading police agency reports and bodycam footage for the CLEAN project",
     long_description=read("README.md"),
     long_description_content_type="text/markdown",
@@ -89,7 +102,6 @@ setup(
         "Programming Language :: Python :: 3.11",
     ],
     setup_requires=["pytest-runner", "setuptools_scm"],
-    use_scm_version={"version_scheme": version_scheme, "local_scheme": local_version},
     project_urls={
         "Maintainer": "https://github.com/biglocalnews",
         "Source": "https://github.com/biglocalnews/clean-scraper",
