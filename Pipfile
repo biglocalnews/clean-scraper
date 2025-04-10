@@ -39,10 +39,6 @@ retry = "*"
 typing-extensions = "*"
 us = "*"
 clean-scraper = {file = ".", editable = true}
-python-dotenv = "*"
-yt-dlp = "*"
-pytubefix = "*"
-urllib3 = "*"
 
 [pipenv]
 allow_prereleases = false
