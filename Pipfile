@@ -38,7 +38,11 @@ click = "*"
 retry = "*"
 typing-extensions = "*"
 us = "*"
-clean-scraper = {file = ".", editable = true}
+playwright = "*"
+pytubefix = "*"
+urllib3 = "*"
+python-dotenv = "*"
+yt-dlp = "*"
 
 [pipenv]
 allow_prereleases = false
