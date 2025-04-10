@@ -1,4 +1,3 @@
-import json
 import logging
 import time
 from pathlib import Path
@@ -389,7 +388,6 @@ class Site:
     def _save_metadata(self, metadata: List[Dict]) -> Path:
         """Save collected metadata to a JSON file."""
         outfile = self.data_dir.joinpath(f"{self.agency_slug}.json")
-        with open(outfile, "w", encoding="utf-8") as f:
-            json.dump(metadata, f, indent=2)
+        self.cache.write_json(outfile, metadata)  # type: ignore
         logging.info(f"Metadata written to {outfile}")
         return outfile
