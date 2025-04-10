@@ -30,18 +30,18 @@ pytest-stub = "*"
 
 [packages]
 beautifulsoup4 = "*"
-html5lib = "*"
-requests = "*"
-pdfplumber = "*"
-tenacity = "*"
 click = "*"
-retry = "*"
-urllib3 = "1.26.18" # pegged to avoid test issue
-typing-extensions = "*"
-us = "*"
-pytube = "*"
-clean-scraper = {file = ".", editable = true}
+html5lib = "*"
+pdfplumber = "*"
+playwright = "*"
 python-dotenv = "*"
+pytubefix = "*"
+requests = "*"
+retry = "*"
+tenacity = "*"
+typing-extensions = "*"
+urllib3 = "*"
+us = "*"
 yt-dlp = "*"
 
 [pipenv]
