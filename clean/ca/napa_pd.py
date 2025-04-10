@@ -1,10 +1,10 @@
 import re
 import time
 import urllib.parse
-from pathlib import Path
-import requests
 from email.message import Message
+from pathlib import Path
 
+import requests
 from bs4 import BeautifulSoup
 
 from .. import utils
@@ -16,10 +16,10 @@ def get_file_extension(url):
     disp = headers.get("content-disposition", None)
     if disp:
         m = Message()
-        m['content-disposition'] = disp
+        m["content-disposition"] = disp
         return Path(m.get_filename()).suffix
     else:
-        return ''
+        return ""
 
 
 class Site:
@@ -133,7 +133,8 @@ class Site:
                                     try:
                                         extension = get_file_extension(asset_link)
                                     except Exception as e:
-                                        extension = ''
+                                        print(f"Exception reported: {e}")
+                                        extension = ""
                                     payload = {
                                         "asset_url": asset_link,
                                         "case_id": case_id,
@@ -150,7 +151,8 @@ class Site:
                                 try:
                                     extension = get_file_extension(link_href)
                                 except Exception as e:
-                                    extension = ''
+                                    print(f"Exception reported: {e}")
+                                    extension = ""
                                 payload = {
                                     "asset_url": link_href,
                                     "case_id": case_id,
