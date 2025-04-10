@@ -11,7 +11,7 @@ from urllib.parse import parse_qs, urlparse
 import requests
 import us  # type: ignore
 from dotenv import load_dotenv
-from pytube import Playlist, YouTube  # type: ignore
+from pytubefix import Playlist, YouTube  # type: ignore
 from retry import retry
 from typing_extensions import NotRequired
 from yt_dlp import YoutubeDL
