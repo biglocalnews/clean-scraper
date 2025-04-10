@@ -30,19 +30,19 @@ pytest-stub = "*"
 
 [packages]
 beautifulsoup4 = "*"
-html5lib = "*"
-requests = "*"
-pdfplumber = "*"
-tenacity = "*"
 click = "*"
-retry = "*"
-urllib3 = "1.26.19" # pegged to avoid test issue
-typing-extensions = "*"
-us = "*"
-pytube = "*"
-python-dotenv = "*"
-yt-dlp = "*"
+html5lib = "*"
+pdfplumber = "*"
 playwright = "*"
+python-dotenv = "*"
+pytubefix = "*"
+requests = "*"
+retry = "*"
+tenacity = "*"
+typing-extensions = "*"
+urllib3 = "*"
+us = "*"
+yt-dlp = "*"
 
 [pipenv]
 allow_prereleases = false
