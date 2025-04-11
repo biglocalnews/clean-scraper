@@ -1,5 +1,5 @@
 -i https://pypi.org/simple
-beautifulsoup4==4.12.3; python_full_version >= '3.6.0'
+beautifulsoup4==4.13.3; python_full_version >= '3.6.0'
 certifi==2024.12.14; python_version >= '3.6'
 cffi==1.17.1; python_version >= '3.8'
 charset-normalizer==3.4.1; python_version >= '3.7'
