@@ -13,17 +13,28 @@ def build_summary(exports_dir: Path, agency_slug: str) -> dict[str, Any]:
         "unique_case_ids": 0,
     }
 
-    if not export_path.exists():
-        summary["error"] = f"Export file not found: {export_path}"
+    try:
+        records = json.loads(export_path.read_text(encoding="utf-8"))
+        if not isinstance(records, list):
+            raise ValueError("Expected a JSON array of scrape records")
+    except (OSError, json.JSONDecodeError, ValueError) as exc:
+        summary["error"] = f"Unable to summarize scrape run: {exc}"
         return summary
 
-    records = json.loads(export_path.read_text(encoding="utf-8"))
     summary["record_count"] = len(records)
     summary["unique_asset_urls"] = len(
-        {record.get("asset_url") for record in records if record.get("asset_url")}
+        {
+            record.get("asset_url")
+            for record in records
+            if isinstance(record, dict) and record.get("asset_url")
+        }
     )
     summary["unique_case_ids"] = len(
-        {record.get("case_id") for record in records if record.get("case_id")}
+        {
+            record.get("case_id")
+            for record in records
+            if isinstance(record, dict) and record.get("case_id")
+        }
     )
     return summary
 
