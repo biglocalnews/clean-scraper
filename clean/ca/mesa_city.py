@@ -1,12 +1,13 @@
-import time
 import re
-from datetime import datetime
+import time
 from pathlib import Path
 from typing import List
+
 from bs4 import BeautifulSoup
-from typing import TypedDict
+
 from .. import utils
 from ..cache import Cache
+from ..metadata_contract import derive_agency_slug, write_metadata_export
 from ..utils import MetadataDict
 
 
@@ -39,9 +40,7 @@ class Site:
     @property
     def agency_slug(self) -> str:
         """Construct the agency slug."""
-        mod = Path(__file__)
-        state_postal = mod.parent.stem
-        return f"{state_postal}_{mod.stem}"  # ca_la_mesa_city
+        return derive_agency_slug(__file__)
 
     def fetch_media_links(self, media_url: str) -> List[dict]:
         """Fetch links from a Media page and include their names.
@@ -103,7 +102,7 @@ class Site:
             "keywords": ["CR", "IA", "Media"],  # Keywords to filter relevant links
             "url": self.disclosure_url,
         }
-        metadata_dict = {}  # Use a dictionary to track unique asset URLs
+        metadata_dict: dict[str, MetadataDict] = {}
 
         cache_path = self._download_index_page(self.disclosure_url)
         html = self.cache.read(cache_path)
@@ -131,7 +130,7 @@ class Site:
                 if "Media" in url:
                     media_links = self.fetch_media_links(asset_url)
                     for media_item in media_links:
-                        payload = {
+                        media_payload: MetadataDict = {
                             "asset_url": media_item["url"],
                             "case_id": text + media_item["url"].split("/")[-1],
                             "name": media_item["url"].split("/")[-1],
@@ -149,7 +148,7 @@ class Site:
                             media_item["url"] not in metadata_dict
                             or not metadata_dict[media_item["url"]]["case_id"]
                         ):
-                            metadata_dict[media_item["url"]] = payload
+                            metadata_dict[media_item["url"]] = media_payload
                 else:
                     if (
                         "youtube" not in url
@@ -158,7 +157,7 @@ class Site:
                     ):
                         asset_url += ".pdf"
 
-                    payload = {
+                    document_payload: MetadataDict = {
                         "asset_url": asset_url,
                         "case_id": text,
                         "name": asset_url.split("/")[-1],
@@ -172,15 +171,17 @@ class Site:
                         asset_url not in metadata_dict
                         or not metadata_dict[asset_url]["case_id"]
                     ):
-                        metadata_dict[asset_url] = payload
+                        metadata_dict[asset_url] = document_payload
 
             time.sleep(throttle)
 
         metadata = list(metadata_dict.values())  # Convert the dictionary back to a list
-        outfile = self.data_dir.joinpath(f"{self.agency_slug}.json")
-        self.cache.write_json(outfile, metadata)
-
-        return outfile
+        return write_metadata_export(
+            data_dir=self.data_dir,
+            agency_slug=self.agency_slug,
+            records=metadata,
+            cache=self.cache,
+        )
 
     def _download_index_page(self, base_url: str):
         url = f"{base_url}"
