@@ -1,11 +1,13 @@
 import logging
 import time
+from copy import deepcopy
 from pathlib import Path
 
 import requests
 
 from .. import utils
 from ..cache import Cache
+from ..metadata_contract import write_metadata_export
 from .config.los_angeles_sheriff import (
     detail_payload,
     detail_request_headers,
@@ -145,10 +147,9 @@ class Site:
 
     def _get_detail_json(self, recordid: str):
         referer = "https://lasdsb1421.powerappsportals.us/disfiles/?id=" + recordid
-        local_request_headers = detail_request_headers
+        local_request_headers = deepcopy(detail_request_headers)
         local_request_headers["Referer"] = referer
-        local_payload = detail_payload
-        local_payload = local_payload.replace("IDGOESHERE", recordid)
+        local_payload = detail_payload.replace("IDGOESHERE", recordid)
         targeturl = (
             "https://lasdsb1421.powerappsportals.us/_services/sharepoint-data.json/"
             + recordid
@@ -264,7 +265,9 @@ class Site:
         return assetlist
 
     def _save_assetlist(self, assetlist):
-        targetfilename = self.data_dir / (self.siteslug + ".json")
-        logger.debug(f"Saving asset list to {targetfilename}")
-        self.cache.write_json(self.cache_dir / targetfilename, assetlist)
-        return targetfilename
+        return write_metadata_export(
+            data_dir=self.data_dir,
+            agency_slug=self.siteslug,
+            records=assetlist,
+            cache=self.cache,
+        )
