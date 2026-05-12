@@ -16,16 +16,29 @@ def normalize_metadata_record(record: Mapping[str, object]) -> MetadataDict:
     if missing_keys:
         raise ValueError(f"Missing required metadata keys: {', '.join(missing_keys)}")
 
+    invalid_required_fields = [
+        key
+        for key in REQUIRED_KEYS
+        if record[key] is None or str(record[key]).strip() == ""
+    ]
+    if invalid_required_fields:
+        raise ValueError(
+            "Required metadata fields cannot be empty: "
+            + ", ".join(invalid_required_fields)
+        )
+
     title = record.get("title")
     normalized: MetadataDict = {
         "asset_url": str(record["asset_url"]).strip(),
         "name": str(record["name"]).strip(),
-        "parent_page": str(record["parent_page"]).strip(),
+        "parent_page": str(record["parent_page"]).replace("\\", "/").strip(),
         "title": None if title is None else str(title).strip(),
     }
 
     details = record.get("details")
     if details is not None:
+        if not isinstance(details, dict):
+            raise TypeError("details must be a dict")
         normalized["details"] = cast(dict, details)
 
     case_id = record.get("case_id")
