@@ -4,6 +4,25 @@ from pathlib import Path
 from typing import Any
 
 
+def _count_unique_field_values(records: list[Any], field_name: str) -> int:
+    values: set[Any] = set()
+    for record in records:
+        if not isinstance(record, dict):
+            continue
+
+        value = record.get(field_name)
+        if not value:
+            continue
+
+        try:
+            hash(value)
+        except TypeError:
+            continue
+
+        values.add(value)
+    return len(values)
+
+
 def build_summary(exports_dir: Path, agency_slug: str) -> dict[str, Any]:
     export_path = exports_dir / f"{agency_slug}.json"
     summary: dict[str, Any] = {
@@ -22,20 +41,8 @@ def build_summary(exports_dir: Path, agency_slug: str) -> dict[str, Any]:
         return summary
 
     summary["record_count"] = len(records)
-    summary["unique_asset_urls"] = len(
-        {
-            record.get("asset_url")
-            for record in records
-            if isinstance(record, dict) and record.get("asset_url")
-        }
-    )
-    summary["unique_case_ids"] = len(
-        {
-            record.get("case_id")
-            for record in records
-            if isinstance(record, dict) and record.get("case_id")
-        }
-    )
+    summary["unique_asset_urls"] = _count_unique_field_values(records, "asset_url")
+    summary["unique_case_ids"] = _count_unique_field_values(records, "case_id")
     return summary
 
 

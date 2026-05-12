@@ -75,6 +75,32 @@ def test_build_summary_handles_missing_and_none_fields(tmp_path: Path):
     assert "error" not in summary
 
 
+def test_build_summary_ignores_unhashable_field_values(tmp_path: Path):
+    agency_slug = "ca_unhashable_pd"
+    exports_dir = tmp_path / "exports"
+    exports_dir.mkdir(parents=True)
+    (exports_dir / f"{agency_slug}.json").write_text(
+        json.dumps(
+            [
+                {
+                    "asset_url": ["https://example.org/a.pdf"],
+                    "case_id": {"id": "CASE-1"},
+                },
+                {"asset_url": "https://example.org/a.pdf", "case_id": "CASE-1"},
+                {"asset_url": ["https://example.org/b.pdf"], "case_id": ["CASE-2"]},
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    summary = build_summary(exports_dir=exports_dir, agency_slug=agency_slug)
+
+    assert summary["record_count"] == 3
+    assert summary["unique_asset_urls"] == 1
+    assert summary["unique_case_ids"] == 1
+    assert "error" not in summary
+
+
 def test_build_summary_handles_malformed_json(tmp_path: Path):
     agency_slug = "ca_bad_json_pd"
     exports_dir = tmp_path / "exports"
