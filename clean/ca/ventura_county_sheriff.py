@@ -8,6 +8,7 @@ from bs4 import BeautifulSoup
 
 from .. import utils
 from ..cache import Cache
+from ..metadata_contract import derive_agency_slug, write_metadata_export
 from ..utils import MetadataDict
 
 logger = logging.getLogger(__name__)
@@ -38,12 +39,9 @@ class Site:
         self.data_dir = data_dir
         self.cache_dir = cache_dir
 
-        # Use module path to construct agency slug, which we'll use downstream
-        # to create a subdir inside the main cache directory to stash files for this agency
-        mod = Path(__file__)
-        state_postal = mod.parent.stem
-        self.cache_suffix = f"{state_postal}_{mod.stem}"  # ca_ventura_county_sheriff
-        self.cache_root = cache_dir / (self.cache_suffix)
+        self.agency_slug = derive_agency_slug(__file__)
+        self.cache_suffix = self.agency_slug
+        self.cache_root = cache_dir / self.agency_slug
         self.subpages_dir = self.cache_root / "subpages"
 
     def scrape_meta(self, throttle: int = 0) -> Path:
@@ -62,10 +60,12 @@ class Site:
             metadata.extend(local_metadata)
             time.sleep(throttle)
 
-        outfile = self.data_dir.joinpath(f"{self.cache_suffix}.json")
-        logger.debug(f"Attempting to save metadata to {outfile}")
-        full_filename = self.cache.write_json(outfile, metadata)
-        return full_filename
+        return write_metadata_export(
+            data_dir=self.data_dir,
+            agency_slug=self.agency_slug,
+            records=metadata,
+            cache=self.cache,
+        )
 
     # Helper/Private Methods
     def _process_detail_page(self, target_url) -> List[MetadataDict]:

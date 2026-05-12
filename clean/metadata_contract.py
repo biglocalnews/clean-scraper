@@ -1,6 +1,7 @@
 from pathlib import Path
 from typing import Iterable, Mapping, cast
 
+from clean.cache import Cache
 from clean.utils import MetadataDict
 
 REQUIRED_KEYS = ("asset_url", "name", "parent_page")
@@ -52,3 +53,13 @@ def normalize_metadata_records(
     records: Iterable[Mapping[str, object]],
 ) -> list[MetadataDict]:
     return [normalize_metadata_record(record) for record in records]
+
+
+def write_metadata_export(
+    data_dir: Path,
+    agency_slug: str,
+    records: Iterable[Mapping[str, object]],
+    cache: Cache,
+) -> Path:
+    normalized = normalize_metadata_records(records)
+    return cache.write_json(data_dir / f"{agency_slug}.json", normalized)
