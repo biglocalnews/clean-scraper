@@ -130,10 +130,11 @@ class Site:
                 if "Media" in url:
                     media_links = self.fetch_media_links(asset_url)
                     for media_item in media_links:
+                        media_name = media_item["url"].rstrip("/").split("/")[-1]
                         media_payload: MetadataDict = {
                             "asset_url": media_item["url"],
-                            "case_id": text + media_item["url"].split("/")[-1],
-                            "name": media_item["url"].split("/")[-1],
+                            "case_id": text + media_name,
+                            "name": media_name,
                             "title": media_item["name"],
                             "parent_page": asset_url,
                             "details": {
@@ -157,10 +158,11 @@ class Site:
                     ):
                         asset_url += ".pdf"
 
+                    document_name = asset_url.rstrip("/").split("/")[-1]
                     document_payload: MetadataDict = {
                         "asset_url": asset_url,
                         "case_id": text,
-                        "name": asset_url.split("/")[-1],
+                        "name": document_name,
                         "title": text,
                         "parent_page": str(report_keywords["url"]),
                         "details": {
