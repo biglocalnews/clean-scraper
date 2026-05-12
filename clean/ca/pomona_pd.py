@@ -8,6 +8,7 @@ from playwright.sync_api import sync_playwright
 
 from .. import utils
 from ..cache import Cache
+from ..metadata_contract import derive_agency_slug, write_metadata_export
 from .config.pomona_pd import request_body
 
 logger = logging.getLogger(__name__)
@@ -42,10 +43,7 @@ class Site:
     @property
     def agency_slug(self) -> str:
         """Construct the agency slug."""
-        # Use module path to construct agency slug, which we'll use downstream
-        mod = Path(__file__)
-        state_postal = mod.parent.stem
-        return f"{state_postal}_{mod.stem}"  # ca_pomona_pd
+        return derive_agency_slug(__file__)
 
     def scrape_meta(self, throttle=0):
         # construct a local filename relative to the cache directory - agency slug + page url (ca_pomona_pd/openrecordssummary.html)
@@ -63,7 +61,7 @@ class Site:
         pages_element = content_areas.find("b", class_="dxp-lead dxp-summary")
         total_pages = self.extract_total_pages(pages_element.get_text(strip=True))
         page_no = 1
-        print(total_pages)
+        logger.debug("Total pages discovered: %s", total_pages)
         captured_requests = self.get_headers_and_cookies()
         if len(captured_requests) > 0:
             while page_no < total_pages:
@@ -86,11 +84,10 @@ class Site:
                     self.cache.write(output_file, res_text)
                     local_index_pages.append(child_filename)
                     logger.debug("Writing to Child Page")
-                    print("Writing to Child Page")
                     page_no += 1
                     time.sleep(throttle)
 
-        print(local_index_pages)
+        logger.debug("Local index pages: %s", local_index_pages)
         case_details = []
         for page in local_index_pages:
             html = self.cache.read(page)
@@ -116,7 +113,7 @@ class Site:
                     child_filename = f"{self.agency_slug}/{child_name}"
                     child_request_url = f"{self.child_page_url}{ref_id}&view=6"
                     self.cache.download(child_filename, child_request_url, force=True)
-                    print(child_request_url)
+                    logger.debug("Processing child request URL: %s", child_request_url)
                     info_dict = {
                         "request_number": column_texts[0],
                         "create_date": column_texts[1],
@@ -159,9 +156,12 @@ class Site:
                             },
                         }
                         metadata.append(payload)
-        outfile = self.data_dir.joinpath(f"{self.agency_slug}.json")
-        self.cache.write_json(outfile, metadata)
-        return outfile
+        return write_metadata_export(
+            data_dir=self.data_dir,
+            agency_slug=self.agency_slug,
+            records=metadata,
+            cache=self.cache,
+        )
 
     def extract_total_pages(self, text):
         # Regular expression to find page information
