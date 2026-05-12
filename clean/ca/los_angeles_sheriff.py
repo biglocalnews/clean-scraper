@@ -2,8 +2,11 @@ import logging
 import time
 from copy import deepcopy
 from pathlib import Path
+from typing import Optional
 
 import requests
+from bs4 import BeautifulSoup
+from bs4.element import Tag
 
 from .. import utils
 from ..cache import Cache
@@ -85,6 +88,8 @@ class Site:
         self.data_dir = data_dir
         self.cache_dir = cache_dir
         self.cache = Cache(cache_dir)
+        self.session = requests.Session()
+        self._request_verification_token: Optional[str] = None
         self.subpages_dir = cache_dir / (self.siteslug + "/subpages")
         for localdir in [self.cache_dir, self.data_dir, self.subpages_dir]:
             utils.create_directory(localdir)
@@ -103,9 +108,11 @@ class Site:
 
     def _fetch_index(self):
         indexjsonurl = "https://lasdsb1421.powerappsportals.us/_services/entity-grid-data.json/7ebea772-1fab-4aa3-9c03-f3b767f83247"
-        r = requests.post(
+        r = self.session.post(
             indexjsonurl,
-            headers=index_request_headers,
+            headers=self._build_request_headers(
+                index_request_headers, self.disclosure_url
+            ),
             data=index_payload,
         )
         targetfilename = f"{self.siteslug}/index.json"
@@ -147,23 +154,61 @@ class Site:
 
     def _get_detail_json(self, recordid: str):
         referer = "https://lasdsb1421.powerappsportals.us/disfiles/?id=" + recordid
-        local_request_headers = deepcopy(detail_request_headers)
-        local_request_headers["Referer"] = referer
         local_payload = detail_payload.replace("IDGOESHERE", recordid)
         targeturl = (
             "https://lasdsb1421.powerappsportals.us/_services/sharepoint-data.json/"
             + recordid
         )
         targetfilename = f"{self.siteslug}/subpages/{recordid}.json"
-        r = requests.post(
+        r = self.session.post(
             targeturl,
-            headers=local_request_headers,
+            headers=self._build_request_headers(detail_request_headers, referer),
             data=local_payload,
         )
         if not r.ok:
             logger.warning(f"Problem downloading detail JSON for {recordid}")
         else:
             self.cache.write_binary(targetfilename, r.content)
+
+    def _build_request_headers(self, template: dict, referer: str) -> dict:
+        """Build request headers and inject runtime anti-forgery token when available."""
+        headers = deepcopy(template)
+        headers["Referer"] = referer
+        token = self._get_request_verification_token()
+        if token:
+            headers["__RequestVerificationToken"] = token
+        return headers
+
+    def _get_request_verification_token(self) -> str:
+        """Fetch and cache runtime request verification token for LASD portal."""
+        if self._request_verification_token:
+            return self._request_verification_token
+
+        try:
+            response = self.session.get(
+                self.disclosure_url,
+                headers={"User-Agent": index_request_headers.get("User-Agent", "")},
+                timeout=30,
+            )
+            if response.ok:
+                soup = BeautifulSoup(response.text, "html.parser")
+                token_input = soup.find(
+                    "input", attrs={"name": "__RequestVerificationToken"}
+                )
+                if isinstance(token_input, Tag) and token_input.get("value"):
+                    self._request_verification_token = str(token_input["value"])
+            else:
+                logger.warning(
+                    "Could not fetch LASD disclosure page for token acquisition: status %s",
+                    response.status_code,
+                )
+        except requests.RequestException as exc:
+            logger.warning(
+                "Could not fetch LASD runtime verification token: %s",
+                exc,
+            )
+
+        return self._request_verification_token or ""
 
     def _build_detail_file_list(self):
         cachefiles = self.cache.files(subdir=self.siteslug + "/subpages")

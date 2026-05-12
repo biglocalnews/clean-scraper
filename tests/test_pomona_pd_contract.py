@@ -39,6 +39,12 @@ def test_pomona_agency_slug_is_canonical(tmp_path):
     assert site.agency_slug == "ca_pomona_pd"
 
 
+def test_pomona_urls_do_not_embed_session_path(tmp_path):
+    site = Site(data_dir=tmp_path / "exports", cache_dir=tmp_path / "cache")
+    assert "/_rs/(S(" not in site.base_url
+    assert "/_rs/(S(" not in site.child_page_url
+
+
 def test_pomona_scrape_meta_uses_contract_writer_and_canonical_name(
     tmp_path, monkeypatch
 ):

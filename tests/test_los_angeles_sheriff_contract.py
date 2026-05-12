@@ -1,7 +1,10 @@
 from copy import deepcopy
 
 import clean.ca.los_angeles_sheriff as los_angeles_sheriff
-from clean.ca.config.los_angeles_sheriff import detail_request_headers
+from clean.ca.config.los_angeles_sheriff import (
+    detail_request_headers,
+    index_request_headers,
+)
 from clean.ca.los_angeles_sheriff import Site
 
 
@@ -23,7 +26,8 @@ def test_get_detail_json_does_not_mutate_imported_request_headers(
         captured["data"] = data
         return Response()
 
-    monkeypatch.setattr(los_angeles_sheriff.requests, "post", fake_post)
+    monkeypatch.setattr(site, "_get_request_verification_token", lambda: "")
+    monkeypatch.setattr(site.session, "post", fake_post)
     monkeypatch.setattr(site.cache, "write_binary", lambda *_args, **_kwargs: None)
 
     site._get_detail_json(record_id)
@@ -58,3 +62,9 @@ def test_save_assetlist_uses_metadata_contract_writer(tmp_path, monkeypatch):
     assert call_args["agency_slug"] == site.siteslug
     assert call_args["records"] == assetlist
     assert call_args["cache"] is site.cache
+
+
+def test_lasd_config_headers_do_not_embed_session_tokens():
+    for headers in (index_request_headers, detail_request_headers):
+        assert "Cookie" not in headers
+        assert "__RequestVerificationToken" not in headers

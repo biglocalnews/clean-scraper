@@ -9,7 +9,7 @@ from playwright.sync_api import sync_playwright
 from .. import utils
 from ..cache import Cache
 from ..metadata_contract import derive_agency_slug, write_metadata_export
-from .config.pomona_pd import request_body
+from .config.pomona_pd import PAGE_NUMBER_PATTERN
 
 logger = logging.getLogger(__name__)
 
@@ -34,8 +34,12 @@ class Site:
             data_dir (Path): The directory where downstream processed files/data will be saved
             cache_dir (Path): The directory where files will be cached
         """
-        self.base_url = "https://sb1421-pomona.govqa.us/WEBAPP/_rs/(S(lhl3lg2etd0r45ktfusanto4))/openrecordssummary.aspx?view=6"
-        self.child_page_url = "https://sb1421-pomona.govqa.us/WEBAPP/_rs/(S(lhl3lg2etd0r45ktfusanto4))/RequestArchiveDetails.aspx?rid="
+        self.base_url = (
+            "https://sb1421-pomona.govqa.us/WEBAPP/openrecordssummary.aspx?view=6"
+        )
+        self.child_page_url = (
+            "https://sb1421-pomona.govqa.us/WEBAPP/RequestArchiveDetails.aspx?rid="
+        )
         self.data_dir = data_dir
         self.cache_dir = cache_dir
         self.cache = Cache(cache_dir)
@@ -65,14 +69,23 @@ class Site:
         captured_requests = self.get_headers_and_cookies()
         if len(captured_requests) > 0:
             while page_no < total_pages:
+                captured_request = captured_requests[-1]
+                request_template = captured_request.get("post_data")
+                if not request_template:
+                    logger.warning(
+                        "No POST body captured from Pomona pagination request; stopping pagination."
+                    )
+                    break
                 child_name = f"pomona_{page_no+1}"
-                updated_request_body = request_body.replace("PN99", f"PN{page_no}")
+                updated_request_body = re.sub(
+                    PAGE_NUMBER_PATTERN, f"PN{page_no}", request_template, count=1
+                )
                 child_filename = f"{self.agency_slug}/{child_name}.html"
                 output_file = self.cache_dir.joinpath(child_filename)
                 with utils.post_url(
-                    captured_requests[-1]["url"],
-                    headers=captured_requests[-1]["headers"],
-                    cookies=captured_requests[-1]["cookies"],
+                    captured_request["url"],
+                    headers=captured_request["headers"],
+                    cookies=captured_request["cookies"],
                     data=updated_request_body,
                 ) as r:
                     res_text = r.text
@@ -200,6 +213,7 @@ class Site:
                             cookie["name"]: cookie["value"]
                             for cookie in context.cookies()
                         },
+                        "post_data": request.post_data,
                     }
                     captured_requests.append(request_info)
 
