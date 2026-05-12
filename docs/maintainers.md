@@ -29,3 +29,20 @@ If you update library requirements (aka the `Pipfile[.lock]`), make sure to rege
 ```bash
 pipenv requirements > requirements.txt
 ```
+
+## GitHub Actions scraper validation
+
+Use the `.github/workflows/scraper-validation.yml` workflow to run a scraper in GitHub Actions and review the exported outputs.
+
+1. Open **Actions** in the repository.
+2. Select **Scraper validation**.
+3. Click **Run workflow**.
+4. Enter the `agency_slug` for the scraper you want to validate.
+5. Start the workflow run.
+
+After the run completes, review:
+
+- The step summary panel in the workflow run
+- The `scraper-exports` artifact
+- The `scraper-summary` artifact
+- The optional `scraper-cache` artifact
