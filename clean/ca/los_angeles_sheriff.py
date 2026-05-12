@@ -1,11 +1,16 @@
 import logging
 import time
+from copy import deepcopy
 from pathlib import Path
+from typing import Optional
 
 import requests
+from bs4 import BeautifulSoup
+from bs4.element import Tag
 
 from .. import utils
 from ..cache import Cache
+from ..metadata_contract import write_metadata_export
 from .config.los_angeles_sheriff import (
     detail_payload,
     detail_request_headers,
@@ -24,6 +29,47 @@ class Site:
         cache.write_json and cache.read_json are using absolute paths.
         There is no standarized POST function yet.
         BLN request headers are not used, though those might break the scraper.
+
+    If this thing breaks again:
+        -- Open a browser. Find the new download page. Go into
+            the browser tools, network table, refresh, find the new JSON
+            URL. Copy that URL into JSONINDEXURL in the code below.
+        -- Open config/ca/los_angeles_sheriff.py.
+        -- In your browser, look at the request tab for that index JSON.
+            View the Raw version. Replace the payload. Near the end of the
+            payload section, reset "pageSize" to 9999. Save!
+        -- Go back to your browser. Find that index JSON in the network tab.
+            Right-click on it. Select copy, request headers. Paste this into
+            a new text editor tab. Kill the lines that begin with POST and
+            Content-Length. With your text editor in regex mode:
+                -- Search for ^ and replace with "
+                -- Search for :space and replace with ": "
+                -- Search for $ and replace with ",
+        -- Select that hunk of text. Switch back to the config file. Paste it
+            in as the *INDEX* request headers. Indent as needed.
+        -- Switch back to your web browser. In the Tools: Network panel, trash
+            the existing results.
+        -- Click on a case, any case. Your Network panel should light up. The first
+            file will have URL that starts with a bunch of hexadecimal characters
+            mixed with hyphens. Scroll down until you see a second similar filename.
+            Click on that.
+        -- Now right-click on the filename, pick out Copy, request headers.
+        -- Paste this into a new text editor window. As before, go and kill
+            the lines that begin with POST and Content-Length. With
+            your text editor in regex mode:
+            With your text editor in regex mode:
+                -- Search for ^ and replace with "
+                -- Search for :space and replace with ": "
+                -- Search for $ and replace with ",
+        -- Paste this into the config file as the *detail* request headers
+        -- Within your web browser for that same URL, click over to the "request"
+            tab within the network panel. Hit the "raw" button. Highlight everything.
+            Copy it into a new text editor. It should look something like this:  {"regarding":{"Id":"e2c722aa-d0e0-ee11-904d-001dd809c772","LogicalName":"sb1421_sb1421responsiverecords","Name":null,"KeyAttributes":[],"RowVersion":null},"sortExpression":"FileLeafRef ASC","page":1,"pageSize":4,"folderPath":""}
+        -- Change that pageSize value to 9990.
+        -- That ID value that begins with e2c, change that to IDGOESHERE. It may look something like {"regarding":{"Id":"IDGOESHERE","LogicalName":"sb1421_sb1421responsiverecords","Name":null,"KeyAttributes":[],"RowVersion":null},"sortExpression":"FileLeafRef ASC","page":1,"pageSize":9990,"folderPath":""}
+        -- In the config file, find the detail payload. Between the single quotes, paste in what you just did.
+
+
     """
 
     name = "Los Angeles Sheriff's Department"
@@ -38,10 +84,12 @@ class Site:
             "caseindex",
         ]  # What cached JSON files aren't page-level JSONs?
         self.base_url = "https://lasd.org/"
-        self.disclosure_url = "https://lasdsb1421.powerappsportals.us/"
+        self.disclosure_url = "https://lasdsb1421.powerappsportals.us/page/"
         self.data_dir = data_dir
         self.cache_dir = cache_dir
         self.cache = Cache(cache_dir)
+        self.session = requests.Session()
+        self._request_verification_token: Optional[str] = None
         self.subpages_dir = cache_dir / (self.siteslug + "/subpages")
         for localdir in [self.cache_dir, self.data_dir, self.subpages_dir]:
             utils.create_directory(localdir)
@@ -59,10 +107,12 @@ class Site:
         return assetlist_filename
 
     def _fetch_index(self):
-        indexjsonurl = "https://lasdsb1421.powerappsportals.us/_services/entity-grid-data.json/f46b70cc-580b-4f1a-87c3-41deb48eb90d"
-        r = requests.post(
+        indexjsonurl = "https://lasdsb1421.powerappsportals.us/_services/entity-grid-data.json/7ebea772-1fab-4aa3-9c03-f3b767f83247"
+        r = self.session.post(
             indexjsonurl,
-            headers=index_request_headers,
+            headers=self._build_request_headers(
+                index_request_headers, self.disclosure_url
+            ),
             data=index_payload,
         )
         targetfilename = f"{self.siteslug}/index.json"
@@ -104,24 +154,61 @@ class Site:
 
     def _get_detail_json(self, recordid: str):
         referer = "https://lasdsb1421.powerappsportals.us/disfiles/?id=" + recordid
-        local_request_headers = detail_request_headers
-        local_request_headers["Referer"] = referer
-        local_payload = detail_payload
-        local_payload = local_payload.replace("IDGOESHERE", recordid)
+        local_payload = detail_payload.replace("IDGOESHERE", recordid)
         targeturl = (
             "https://lasdsb1421.powerappsportals.us/_services/sharepoint-data.json/"
             + recordid
         )
         targetfilename = f"{self.siteslug}/subpages/{recordid}.json"
-        r = requests.post(
+        r = self.session.post(
             targeturl,
-            headers=local_request_headers,
+            headers=self._build_request_headers(detail_request_headers, referer),
             data=local_payload,
         )
         if not r.ok:
             logger.warning(f"Problem downloading detail JSON for {recordid}")
         else:
             self.cache.write_binary(targetfilename, r.content)
+
+    def _build_request_headers(self, template: dict, referer: str) -> dict:
+        """Build request headers and inject runtime anti-forgery token when available."""
+        headers = deepcopy(template)
+        headers["Referer"] = referer
+        token = self._get_request_verification_token()
+        if token:
+            headers["__RequestVerificationToken"] = token
+        return headers
+
+    def _get_request_verification_token(self) -> str:
+        """Fetch and cache runtime request verification token for LASD portal."""
+        if self._request_verification_token:
+            return self._request_verification_token
+
+        try:
+            response = self.session.get(
+                self.disclosure_url,
+                headers={"User-Agent": index_request_headers.get("User-Agent", "")},
+                timeout=30,
+            )
+            if response.ok:
+                soup = BeautifulSoup(response.text, "html.parser")
+                token_input = soup.find(
+                    "input", attrs={"name": "__RequestVerificationToken"}
+                )
+                if isinstance(token_input, Tag) and token_input.get("value"):
+                    self._request_verification_token = str(token_input["value"])
+            else:
+                logger.warning(
+                    "Could not fetch LASD disclosure page for token acquisition: status %s",
+                    response.status_code,
+                )
+        except requests.RequestException as exc:
+            logger.warning(
+                "Could not fetch LASD runtime verification token: %s",
+                exc,
+            )
+
+        return self._request_verification_token or ""
 
     def _build_detail_file_list(self):
         cachefiles = self.cache.files(subdir=self.siteslug + "/subpages")
@@ -223,7 +310,9 @@ class Site:
         return assetlist
 
     def _save_assetlist(self, assetlist):
-        targetfilename = self.data_dir / (self.siteslug + ".json")
-        logger.debug(f"Saving asset list to {targetfilename}")
-        self.cache.write_json(self.cache_dir / targetfilename, assetlist)
-        return targetfilename
+        return write_metadata_export(
+            data_dir=self.data_dir,
+            agency_slug=self.siteslug,
+            records=assetlist,
+            cache=self.cache,
+        )

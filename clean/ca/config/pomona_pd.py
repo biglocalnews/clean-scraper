@@ -1,0 +1,1 @@
+PAGE_NUMBER_PATTERN = r"PN\d+"

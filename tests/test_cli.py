@@ -19,7 +19,13 @@ def test_cli_list():
     """Test the `list' command."""
     runner = CliRunner()
     result = runner.invoke(cli, ["list"])
-    assert "ca_san_diego_pd" in result.stdout
+    for slug in [
+        "ca_san_diego_pd",
+        "ca_ventura_county_sheriff",
+        "ca_mesa_city",
+        "ca_pomona_pd",
+    ]:
+        assert slug in result.stdout
 
 
 @pytest.mark.usefixtures("set_default_env", "create_scraper_dir")
