@@ -1,0 +1,88 @@
+name: Scraper validation
+
+on:
+  workflow_dispatch:
+    inputs:
+      agency_slug:
+        description: Scraper slug to run
+        required: true
+        type: string
+      throttle_seconds:
+        description: Throttle seconds passed to scrape-meta
+        required: false
+        default: "0"
+        type: string
+      python_version:
+        description: Python version for runner
+        required: false
+        default: "3.11"
+        type: string
+      upload_cache:
+        description: Upload cache directory artifact
+        required: false
+        default: false
+        type: boolean
+
+jobs:
+  scrape-meta:
+    runs-on: ubuntu-latest
+    env:
+      CLEAN_OUTPUT_DIR: ${{ github.workspace }}/.clean-scraper
+      AGENCY_SLUG: ${{ inputs.agency_slug }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ inputs.python_version }}
+          cache: pipenv
+
+      - name: Install pipenv
+        shell: bash
+        run: curl https://raw.githubusercontent.com/pypa/pipenv/master/get-pipenv.py | python
+
+      - name: Install dependencies
+        shell: bash
+        run: pipenv install --dev --python="$(which python)"
+
+      - name: Run scraper metadata export
+        shell: bash
+        run: >
+          pipenv run python -m clean.cli scrape-meta "$AGENCY_SLUG"
+          --throttle "${{ inputs.throttle_seconds }}" -l INFO
+
+      - name: Build run summary
+        shell: bash
+        run: |
+          pipenv run python scripts/ci/summarize_scrape_run.py \
+            --exports-dir "$CLEAN_OUTPUT_DIR/exports" \
+            --agency-slug "$AGENCY_SLUG" \
+            --summary-md "$CLEAN_OUTPUT_DIR/run-summary.md" \
+            --summary-json "$CLEAN_OUTPUT_DIR/run-summary.json"
+          cat "$CLEAN_OUTPUT_DIR/run-summary.md" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload export artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: scraper-exports-${{ inputs.agency_slug }}-${{ github.run_number }}
+          path: ${{ env.CLEAN_OUTPUT_DIR }}/exports
+          if-no-files-found: error
+
+      - name: Upload run summary artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: scraper-summary-${{ inputs.agency_slug }}-${{ github.run_number }}
+          path: |
+            ${{ env.CLEAN_OUTPUT_DIR }}/run-summary.md
+            ${{ env.CLEAN_OUTPUT_DIR }}/run-summary.json
+          if-no-files-found: error
+
+      - name: Upload cache artifact
+        if: ${{ inputs.upload_cache }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: scraper-cache-${{ inputs.agency_slug }}-${{ github.run_number }}
+          path: ${{ env.CLEAN_OUTPUT_DIR }}/cache
+          if-no-files-found: warn
