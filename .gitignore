@@ -144,3 +144,7 @@ tags
 
 muckrock-api.txt
 credentials.json
+
+# Local git worktrees
+.worktrees/
+worktrees/
