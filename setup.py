@@ -86,6 +86,7 @@ setup(
         clean-scraper=clean.cli:cli
     """,
     install_requires=parse_requirements("requirements.txt"),
+    python_requires=">=3.10",
     license="Apache 2.0 license",
     zip_safe=False,
     classifiers=[

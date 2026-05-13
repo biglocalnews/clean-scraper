@@ -19,9 +19,18 @@ def test_ci_workflow_python_matrix_uses_supported_versions():
         _read_repo_file(".github/workflows/continuous-deployment.yml")
     )
 
-    assert 'python: ["3.10", "3.11", "3.12"]' in workflow
+    matrix_declaration = re.search(
+        r"^\s*python:\s*\[(?P<versions>[^\]]+)\]", workflow, re.MULTILINE
+    )
+    assert matrix_declaration is not None
+    matrix_versions = re.findall(
+        r'["\'](\d+\.\d+)["\']', matrix_declaration.group("versions")
+    )
+    assert matrix_versions == ["3.10", "3.11", "3.12"]
+
     assert "python-version: ${{ matrix.python }}" in workflow
     assert '"3.9"' not in workflow
+    assert "'3.9'" not in workflow
 
     pre_commit_block = re.search(
         r"pre-commit:\n(?P<body>[\s\S]*?)\n  test-python:", workflow, re.MULTILINE
@@ -43,6 +52,14 @@ def test_setup_classifiers_match_supported_python_versions():
     assert "Programming Language :: Python :: 3.10" in setup_py
     assert "Programming Language :: Python :: 3.11" in setup_py
     assert "Programming Language :: Python :: 3.12" in setup_py
+    assert re.search(r'python_requires\s*=\s*["\']>=3\.10["\']', setup_py) is not None
+
+
+def test_ci_workflow_commented_python_versions_avoid_eol():
+    workflow = _read_repo_file(".github/workflows/continuous-deployment.yml")
+
+    assert "python-version: '3.9'" not in workflow
+    assert 'python-version: "3.9"' not in workflow
 
 
 def test_tox_env_list_uses_supported_python_versions():
@@ -50,3 +67,10 @@ def test_tox_env_list_uses_supported_python_versions():
 
     assert "py39" not in tox_ini
     assert "py{310,311,312}" in tox_ini
+
+
+def test_pre_commit_pyupgrade_targets_python_310_plus():
+    pre_commit_config = _read_repo_file(".pre-commit-config.yaml")
+
+    assert "--py310-plus" in pre_commit_config
+    assert "--py37-plus" not in pre_commit_config
