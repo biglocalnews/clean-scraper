@@ -148,3 +148,4 @@ credentials.json
 # Local git worktrees
 .worktrees/
 worktrees/
+.worktree-*/
