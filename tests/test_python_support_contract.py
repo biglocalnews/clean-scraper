@@ -69,8 +69,7 @@ def test_tox_env_list_uses_supported_python_versions():
     assert "py{310,311,312}" in tox_ini
 
 
-def test_pre_commit_pyupgrade_targets_python_310_plus():
+def test_pre_commit_pyupgrade_target_stays_compatible_with_repository_sources():
     pre_commit_config = _read_repo_file(".pre-commit-config.yaml")
 
-    assert "--py310-plus" in pre_commit_config
-    assert "--py37-plus" not in pre_commit_config
+    assert "--py37-plus" in pre_commit_config

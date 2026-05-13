@@ -43,7 +43,7 @@ repos:
     rev: v3.15.2
     hooks:
     -   id: pyupgrade
-        args: [--py310-plus]
+        args: [--py37-plus]
 
 -   repo: https://github.com/pre-commit/mirrors-mypy
     rev: 'v1.9.0'  # Use the sha / tag you want to point at
