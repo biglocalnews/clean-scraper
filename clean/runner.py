@@ -65,7 +65,7 @@ class Runner:
         slug = agency_slug[3:].strip().lower()
         return state, slug
 
-    def scrape_meta(self, agency_slug: str) -> Path:
+    def scrape_meta(self, agency_slug: str, progress_callback=None) -> Path:
         """Scrape metadata  for the provided agency.
 
         Args:
@@ -73,17 +73,34 @@ class Runner:
 
         Returns: a Path object leading to a CSV file.
         """
+        if progress_callback:
+            progress_callback(
+                {"action": "scrape_meta", "phase": "start", "agency": agency_slug}
+            )
         state, slug = self._validate_agency_slug(agency_slug)
         state_mod = import_module(f"clean.{state}.{slug}")
         # Run the scrape method
         logger.info(f"Scraping {agency_slug}")
+        if progress_callback:
+            progress_callback(
+                {"action": "scrape_meta", "phase": "running", "agency": agency_slug}
+            )
         site = state_mod.Site(self.data_dir, self.cache_dir)
         data_path = site.scrape_meta(throttle=self.throttle)
         # Run the path to the data file
         logger.info(f"Generated {data_path}")
+        if progress_callback:
+            progress_callback(
+                {
+                    "action": "scrape_meta",
+                    "phase": "complete",
+                    "agency": agency_slug,
+                    "output_path": str(data_path),
+                }
+            )
         return data_path
 
-    def download_agency(self, agency_slug: str) -> Path:
+    def download_agency(self, agency_slug: str, progress_callback=None) -> Path:
         """Download files for the provided agency.
 
         Args:
@@ -92,6 +109,10 @@ class Runner:
 
         Returns: a Path object leading to a CSV file.
         """
+        if progress_callback:
+            progress_callback(
+                {"action": "download_agency", "phase": "start", "agency": agency_slug}
+            )
         state, slug = self._validate_agency_slug(agency_slug)
         # Define the path to the JSON file
         json_path = self.data_dir / f"{agency_slug}.json"
@@ -99,15 +120,36 @@ class Runner:
         # Load the JSON file
         with open(json_path) as f:
             data = json.load(f)
+        total_items = len(data)
+        if progress_callback:
+            progress_callback(
+                {
+                    "action": "download_agency",
+                    "phase": "manifest_loaded",
+                    "agency": agency_slug,
+                    "total_items": total_items,
+                }
+            )
 
         # Create the download directory if it doesn't exist
         download_dir = self.assets_dir / f"{slug}"
         download_dir.mkdir(parents=True, exist_ok=True)
 
+        downloaded_items = 0
         # Download each asset
-        for item in data:
+        for item_index, item in enumerate(data, start=1):
             asset_url = item.get("asset_url")
             if asset_url:
+                if progress_callback:
+                    progress_callback(
+                        {
+                            "action": "download_agency",
+                            "phase": "item_download_started",
+                            "agency": agency_slug,
+                            "item_index": item_index,
+                            "total_items": total_items,
+                        }
+                    )
                 current_date = datetime.now().strftime("%Y%m%d")
                 local_filepath = (
                     download_dir
@@ -123,8 +165,51 @@ class Runner:
                     with open(local_filepath, "wb") as file:
                         file.write(response.content)
                     logger.info(f"Downloaded {asset_url} to {local_filepath}")
+                    downloaded_items += 1
+                    if progress_callback:
+                        progress_callback(
+                            {
+                                "action": "download_agency",
+                                "phase": "item_download_complete",
+                                "agency": agency_slug,
+                                "item_index": item_index,
+                                "total_items": total_items,
+                            }
+                        )
                 except Exception as e:
                     logger.error(f"Failed to download asset {asset_url}: {e}")
+                    if progress_callback:
+                        progress_callback(
+                            {
+                                "action": "download_agency",
+                                "phase": "item_download_failed",
+                                "agency": agency_slug,
+                                "item_index": item_index,
+                                "total_items": total_items,
+                                "error": str(e),
+                            }
+                        )
+            elif progress_callback:
+                progress_callback(
+                    {
+                        "action": "download_agency",
+                        "phase": "item_skipped",
+                        "agency": agency_slug,
+                        "item_index": item_index,
+                        "total_items": total_items,
+                    }
+                )
+
+        if progress_callback:
+            progress_callback(
+                {
+                    "action": "download_agency",
+                    "phase": "complete",
+                    "agency": agency_slug,
+                    "downloaded_items": downloaded_items,
+                    "total_items": total_items,
+                }
+            )
 
         return download_dir
 

@@ -86,6 +86,7 @@ setup(
         clean-scraper=clean.cli:cli
     """,
     install_requires=parse_requirements("requirements.txt"),
+    python_requires=">=3.10",
     license="Apache 2.0 license",
     zip_safe=False,
     classifiers=[
@@ -96,10 +97,9 @@ setup(
         "Natural Language :: English",
         "Programming Language :: Python",
         "Programming Language :: Python :: 3",
-        "Programming Language :: Python :: 3.8",
-        "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
         "Programming Language :: Python :: 3.11",
+        "Programming Language :: Python :: 3.12",
     ],
     setup_requires=["pytest-runner", "setuptools_scm"],
     project_urls={

@@ -285,7 +285,7 @@ Options:
 Commands:
   list         List all available agencies and their slugs.
   scrape-meta  Command-line interface for generating metadata CSV about...
-  download_agency Downloads assets retrieved in scrape-meta
+  download-agency Downloads assets retrieved in scrape-meta
 ```
 
 Running a state is as simple as passing arguments to the appropriate subcommand.
@@ -300,7 +300,17 @@ pipenv run python -m clean.cli list
 pipenv run python -m clean.cli scrape-meta ca_san_diego_pd
 
 # Trigger file downloads using agency slug
-pipenv run python -m clean.cli download_agency ca_san_diego_pd
+pipenv run python -m clean.cli download-agency ca_san_diego_pd
+```
+
+Both commands emit concise progress lines while they run, for example:
+
+```text
+Starting metadata scrape for ca_san_diego_pd
+Completed metadata scrape for ca_san_diego_pd
+Loaded 3 records for download from ca_san_diego_pd
+Downloaded item 1/3 for ca_san_diego_pd
+Completed downloads for ca_san_diego_pd (1/3 downloaded)
 ```
 
 For more verbose logging, you can ask the system to show debugging information.
@@ -313,7 +323,7 @@ To be a good citizen of the Web and avoid IP blocking, you can throttle (i.e. sl
 
 ``` bash
 # Pause 2 seconds between web requests
-pipenv run python -m clean.cli ca_san_diego_pd -t 2
+pipenv run python -m clean.cli scrape-meta ca_san_diego_pd -t 2
 ```
 
 You could continue to iterate with code edits and CLI runs until you've completed your goal.

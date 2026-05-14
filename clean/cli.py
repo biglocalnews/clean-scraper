@@ -103,8 +103,15 @@ def scrape_meta(
         logger.info("Deleting files generated from previous scraper run.")
         runner.delete()
 
+    def progress_callback(event):
+        phase = event.get("phase")
+        if phase == "start":
+            click.echo(f"Starting metadata scrape for {event['agency']}")
+        elif phase == "complete":
+            click.echo(f"Completed metadata scrape for {event['agency']}")
+
     # Try running the scraper
-    runner.scrape_meta(agency)
+    runner.scrape_meta(agency, progress_callback=progress_callback)
 
 
 @click.command()
@@ -171,8 +178,24 @@ def download_agency(
     cache_dir = Path(cache_dir)
     runner = Runner(data_dir, cache_dir, assets_dir, throttle)
 
+    def progress_callback(event):
+        phase = event.get("phase")
+        if phase == "manifest_loaded":
+            click.echo(
+                f"Loaded {event['total_items']} records for download from {event['agency']}"
+            )
+        elif phase == "item_download_complete":
+            click.echo(
+                f"Downloaded item {event['item_index']}/{event['total_items']} for {event['agency']}"
+            )
+        elif phase == "complete":
+            click.echo(
+                f"Completed downloads for {event['agency']} "
+                f"({event['downloaded_items']}/{event['total_items']} downloaded)"
+            )
+
     # Try running the scraper
-    runner.download_agency(agency)
+    runner.download_agency(agency, progress_callback=progress_callback)
 
 
 cli.add_command(list_agencies)
