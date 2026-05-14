@@ -29,9 +29,22 @@ You can then run a scraper for an agency using its slug:
 ```bash
 # Scrape metadata about available files
 clean-scraper scrape-meta ca_san_diego_pd
+
+# Download files listed in the generated metadata manifest
+clean-scraper download-agency ca_san_diego_pd
 ```
 
-> **NOTE**: Always run `scrape-meta` at least once initially. It generates output required by the `download_agency` subcommand.
+> **NOTE**: Always run `scrape-meta` at least once initially. It generates output required by the `download-agency` subcommand.
+
+Both commands print simple progress updates while they run. For example:
+
+```text
+Starting metadata scrape for ca_san_diego_pd
+Completed metadata scrape for ca_san_diego_pd
+Loaded 3 records for download from ca_san_diego_pd
+Downloaded item 1/3 for ca_san_diego_pd
+Completed downloads for ca_san_diego_pd (1/3 downloaded)
+```
 
 To use the `clean` library in Python, import an agency's scraper and run it directly.
 
@@ -58,5 +71,5 @@ Options:
 Commands:
   list            List all available agencies and their slugs.
   scrape-meta     Command-line interface for generating metadata JSON about...
-  download_agency Downloads assets retrieved in scrape-meta
+  download-agency Downloads assets retrieved in scrape-meta
 ```
